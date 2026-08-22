@@ -26,6 +26,9 @@ importers:
       '@mine/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@mine/shield':
+        specifier: workspace:*
+        version: link:../shield
       zod:
         specifier: ^4.0.0
         version: 4.4.3
@@ -39,6 +42,22 @@ importers:
       esbuild:
         specifier: ^0.28.2
         version: 0.28.2
+      typescript:
+        specifier: ^5.9.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/node@22.20.1)
+
+  packages/shield:
+    dependencies:
+      '@mine/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.1
       typescript:
         specifier: ^5.9.0
         version: 5.9.3

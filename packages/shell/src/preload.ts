@@ -4,6 +4,7 @@ import type {
   NavigateRequest,
   NewTabRequest,
   Result,
+  ShieldStats,
   TabIdRequest,
   TabsUpdatedPayload,
 } from "@mine/contracts";
@@ -36,6 +37,15 @@ const api = {
     ipcRenderer.on(IPC_EVENTS.shell.tabsUpdated, listener);
     return () => {
       ipcRenderer.removeListener(IPC_EVENTS.shell.tabsUpdated, listener);
+    };
+  },
+  onShieldStats: (callback: (payload: ShieldStats) => void): (() => void) => {
+    const listener = (_event: unknown, payload: ShieldStats): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.shield.statsUpdated, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.shield.statsUpdated, listener);
     };
   },
 };

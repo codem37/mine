@@ -41,6 +41,10 @@ function partitionFor(url: URL): Result<string | null, AppError> {
   return ok(null);
 }
 
+export interface TabManagerOptions {
+  readonly stripParams?: (urlString: string) => string;
+}
+
 export class TabManager {
   private readonly tabs = new Map<TabId, InternalTab>();
   private readonly order: TabId[] = [];
@@ -51,7 +55,15 @@ export class TabManager {
     private readonly window: Electron.BrowserWindow,
     private readonly notify: () => void,
     private readonly history: HistoryEntry[] = [],
+    private readonly options: TabManagerOptions = {},
   ) {}
+
+  ownerOf(webContentsId: number): TabId | null {
+    for (const [id, tab] of this.tabs) {
+      if (tab.view.webContents.id === webContentsId) return id;
+    }
+    return null;
+  }
 
   snapshot(): TabsUpdatedPayload {
     const tabs: TabSnapshot[] = [];
@@ -139,11 +151,12 @@ export class TabManager {
     if (tab === undefined) {
       return err({ kind: "invalid-input", message: `unknown tab: ${id}` });
     }
+    const stripped = this.options.stripParams?.(urlString) ?? urlString;
     let parsed: URL;
     try {
-      parsed = new URL(urlString);
+      parsed = new URL(stripped);
     } catch {
-      return err({ kind: "invalid-input", message: `not a url: ${urlString}` });
+      return err({ kind: "invalid-input", message: `not a url: ${stripped}` });
     }
     if (!ALLOWED_SCHEMES.has(parsed.protocol)) {
       return err({

@@ -1,7 +1,26 @@
 import { session } from "electron";
 import { buildSitePartition } from "@mine/contracts";
 
+type SessionHook = (session: Electron.Session) => void;
+
 const cache = new Map<string, Electron.Session>();
+const hooks: SessionHook[] = [];
+const hookedSessions = new WeakSet<Electron.Session>();
+
+export function registerSessionHook(hook: SessionHook): void {
+  hooks.push(hook);
+  for (const existing of cache.values()) {
+    runHooks(existing);
+  }
+}
+
+function runHooks(target: Electron.Session): void {
+  if (hookedSessions.has(target)) return;
+  hookedSessions.add(target);
+  for (const hook of hooks) {
+    hook(target);
+  }
+}
 
 export function defaultSession(): Electron.Session {
   return session.defaultSession;
@@ -27,5 +46,6 @@ export function sessionForPartitionName(name: string): Electron.Session {
     callback(false);
   });
   cache.set(name, created);
+  runHooks(created);
   return created;
 }

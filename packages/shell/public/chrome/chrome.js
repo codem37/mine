@@ -60,3 +60,11 @@ function render(payload) {
 }
 
 mine.onTabsUpdated(render);
+
+const shieldEl = document.getElementById("shield");
+mine.onShieldStats((stats) => {
+  shieldEl.textContent =
+    stats.engineState === "ready"
+      ? String(stats.blockedCount)
+      : `${stats.blockedCount} (${stats.engineState})`;
+});
