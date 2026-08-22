@@ -16,9 +16,30 @@ export interface BridgeSignal {
 
 export type SignalEmitter = (signal: BridgeSignal) => void;
 
+const REQUEST_WINDOW_MS = 60_000;
+
+export class RequestRate {
+  private readonly timestamps: number[] = [];
+
+  record(now = Date.now()): void {
+    this.timestamps.push(now);
+  }
+
+  inLastMinute(now = Date.now()): number {
+    const cutoff = now - REQUEST_WINDOW_MS;
+    while (this.timestamps.length > 0) {
+      const first = this.timestamps[0];
+      if (first === undefined || first >= cutoff) break;
+      this.timestamps.shift();
+    }
+    return this.timestamps.length;
+  }
+}
+
 export interface ShieldBridge {
   engine: ShieldEngine;
   counts: BlockedCounter;
+  requestRate: RequestRate;
   hookSession(session: Electron.Session): void;
   setEmitter(emit: SignalEmitter): void;
   start(): Promise<void>;
@@ -38,6 +59,7 @@ function isRequired(name: string): boolean {
 export function createShieldBridge(): ShieldBridge {
   const engine = new ShieldEngine();
   const counts = new BlockedCounter();
+  const requestRate = new RequestRate();
   const native = loadShieldNative(nativeDirectory());
   if (native !== null) {
     engine.attachNative(native);
@@ -53,6 +75,7 @@ export function createShieldBridge(): ShieldBridge {
     target.webRequest.onBeforeRequest(
       { urls: ["http://*/*", "https://*/*"] },
       (details, callback) => {
+        requestRate.record();
         try {
           let frameUrl = "";
           try {
@@ -108,6 +131,7 @@ export function createShieldBridge(): ShieldBridge {
   return {
     engine,
     counts,
+    requestRate,
     hookSession,
     setEmitter(fn: SignalEmitter): void {
       emit = fn;

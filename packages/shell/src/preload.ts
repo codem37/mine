@@ -7,6 +7,8 @@ import type {
   ShieldStats,
   TabIdRequest,
   TabsUpdatedPayload,
+  Telemetry,
+  WindowState,
 } from "@mine/contracts";
 
 type InvokeResult = Result<unknown>;
@@ -46,6 +48,30 @@ const api = {
     ipcRenderer.on(IPC_EVENTS.shield.statsUpdated, listener);
     return () => {
       ipcRenderer.removeListener(IPC_EVENTS.shield.statsUpdated, listener);
+    };
+  },
+  minimizeWindow: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shell.minimizeWindow, {}),
+  toggleMaximizeWindow: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shell.toggleMaximizeWindow, {}),
+  closeWindow: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shell.closeWindow, {}),
+  onWindowState: (callback: (payload: WindowState) => void): (() => void) => {
+    const listener = (_event: unknown, payload: WindowState): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.shell.windowStateChanged, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.shell.windowStateChanged, listener);
+    };
+  },
+  onTelemetry: (callback: (payload: Telemetry) => void): (() => void) => {
+    const listener = (_event: unknown, payload: Telemetry): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.shell.telemetryUpdated, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.shell.telemetryUpdated, listener);
     };
   },
 };

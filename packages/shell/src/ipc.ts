@@ -4,11 +4,35 @@ import {
   NavigateRequestSchema,
   NewTabRequestSchema,
   TabIdRequestSchema,
+  UnitRequestSchema,
 } from "@mine/contracts";
 import type { TabManager } from "./tab-manager.js";
 import { parsePayload } from "./core/ipc-parse.js";
 
-export function registerIpcHandlers(manager: TabManager): void {
+export function registerIpcHandlers(
+  manager: TabManager,
+  win: Electron.BrowserWindow,
+): void {
+  const unitHandlers: Record<string, () => void> = {
+    [IPC_CHANNELS.shell.minimizeWindow]: () => win.minimize(),
+    [IPC_CHANNELS.shell.toggleMaximizeWindow]: () => {
+      if (win.isMaximized()) {
+        win.unmaximize();
+      } else {
+        win.maximize();
+      }
+    },
+    [IPC_CHANNELS.shell.closeWindow]: () => win.close(),
+  };
+  for (const [channel, action] of Object.entries(unitHandlers)) {
+    ipcMain.handle(channel, async (_event, raw: unknown) => {
+      const payload = parsePayload(UnitRequestSchema, raw);
+      if (!payload.ok) return payload;
+      action();
+      return { ok: true, value: null } as const;
+    });
+  }
+
   ipcMain.handle(
     IPC_CHANNELS.shell.navigate,
     async (_event, raw: unknown) => {

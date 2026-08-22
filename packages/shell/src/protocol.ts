@@ -17,7 +17,7 @@ export function chromeAssetRoot(): string {
   if (override !== undefined && override.length > 0) {
     return path.resolve(override);
   }
-  return fileURLToPath(new URL("../../public/chrome/", import.meta.url));
+  return fileURLToPath(new URL("../../chrome-ui/dist/", import.meta.url));
 }
 
 export function attachChromeProtocol(

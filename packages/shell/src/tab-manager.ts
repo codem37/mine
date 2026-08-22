@@ -43,6 +43,7 @@ function partitionFor(url: URL): Result<string | null, AppError> {
 
 export interface TabManagerOptions {
   readonly stripParams?: (urlString: string) => string;
+  readonly internalPreloadPath?: string;
 }
 
 export class TabManager {
@@ -94,7 +95,7 @@ export class TabManager {
     if (!partition.ok) return partition;
 
     const id: TabId = `tab-${this.nextId++}`;
-    const view = this.createView(partition.value);
+    const view = this.createView(partition.value, parsed.protocol === "mine:");
     const tab: InternalTab = {
       id,
       view,
@@ -219,7 +220,14 @@ export class TabManager {
     return ok(null);
   }
 
-  private createView(partitionName: string | null): WebContentsView {
+  private createView(
+    partitionName: string | null,
+    includePreload: boolean,
+  ): WebContentsView {
+    const preload =
+      includePreload === true
+        ? (this.options.internalPreloadPath ?? undefined)
+        : undefined;
     const view = new WebContentsView({
       webPreferences: {
         sandbox: true,
@@ -229,6 +237,7 @@ export class TabManager {
           partitionName === null
             ? defaultSession()
             : sessionForPartitionName(partitionName),
+        ...(preload === undefined ? {} : { preload }),
       },
     });
     view.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
@@ -244,7 +253,7 @@ export class TabManager {
     const bounds = { ...old.getBounds() };
     this.window.contentView.removeChildView(old);
     old.webContents.close();
-    const view = this.createView(partitionName);
+    const view = this.createView(partitionName, false);
     tab.view = view;
     tab.partitionName = partitionName;
     tab.loadState = "idle";
