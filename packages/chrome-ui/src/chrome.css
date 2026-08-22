@@ -7,7 +7,6 @@
 .titlebar {
   position: fixed;
   inset: 0 0 auto 0;
-  height: var(--hud-chamfer);
   height: 44px;
   display: flex;
   align-items: center;

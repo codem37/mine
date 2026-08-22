@@ -1,7 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { CHROME_HEIGHT } from "@mine/contracts";
 
 const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
+const layoutCss = readFileSync(new URL("./chrome.css", import.meta.url), "utf8");
 
 function token(name: string): string {
   const match = css.match(new RegExp(`--hud-${name}:\\s*(#[0-9a-fA-F]{6})`));
@@ -56,5 +58,17 @@ describe("HUD token contrast (WCAG 4.5:1 for text)", () => {
 
   it("decorative strokes stay below the text bar but above invisible", () => {
     expect(contrast(token("line"), token("bg"))).toBeGreaterThan(1.2);
+  });
+});
+
+describe("shared layout constants (ADR 0002)", () => {
+  it("titlebar height matches contracts CHROME_HEIGHT — one number, one source", () => {
+    expect(layoutCss).toContain(`height: ${CHROME_HEIGHT}px;`);
+    const occurrences = layoutCss.split(`height: ${CHROME_HEIGHT}px`).length - 1;
+    expect(occurrences).toBeGreaterThanOrEqual(1);
+  });
+
+  it("telemetry rail starts exactly below the chrome bar", () => {
+    expect(layoutCss).toContain(`top: ${CHROME_HEIGHT}px;`);
   });
 });
