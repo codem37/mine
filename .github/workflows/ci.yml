@@ -4,6 +4,10 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+  issues: write
+
 jobs:
   verify:
     runs-on: ubuntu-latest
@@ -14,7 +18,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -27,3 +31,17 @@ jobs:
 
       - name: Test
         run: pnpm -r test
+
+      - name: Publish diagnostics
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          pnpm install --frozen-lockfile > install.log 2>&1 || true
+          tail -c 40000 install.log > install-tail.log
+          {
+            echo "run: ${{ github.run_id }}"
+            echo "sha: ${{ github.sha }}"
+            cat install-tail.log
+          } > issue-body.md
+          gh issue create --title "ci diagnostics ${{ github.run_id }}" --body-file issue-body.md
