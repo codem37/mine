@@ -82,7 +82,9 @@ renderer. This is decided now so nobody rediscovers it mid-build.
   microbenchmark against a short list.
 
 ## Toolchain
-- Node 20+, pnpm 10+
+- Node 22.13+, pnpm 11. pnpm 11 requires Node >=22.13 internally (uses
+  node:sqlite for its store index) — this isn't a project choice, it's a hard
+  floor pnpm imposes.
 - Rust via rustup, needed from Phase 0 (shield uses it in Phase 2, but verify
   `cargo` resolves now — PATH issues after a fresh rustup install are common
   and easy to catch early)
