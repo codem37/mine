@@ -6,3 +6,4 @@ export * from "./ipc/channels.js";
 export * from "./ipc/schemas.js";
 export * from "./layout/constants.js";
 export * from "./session/partition.js";
+export * from "./shield/verdict.js";

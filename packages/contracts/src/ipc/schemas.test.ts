@@ -3,6 +3,7 @@ import {
   NavigateRequestSchema,
   NavigationStateSchema,
   NewTabRequestSchema,
+  ShieldStatsSchema,
   TabListSchema,
   TabsUpdatedPayloadSchema,
 } from "./schemas.js";
@@ -77,6 +78,37 @@ describe("NewTabRequestSchema", () => {
 
   it("rejects an initial url that is not absolute", () => {
     expect(() => NewTabRequestSchema.parse({ url: "example.com" })).toThrow();
+  });
+});
+
+describe("ShieldStatsSchema", () => {
+  it("accepts a per-tab count with a named engine state", () => {
+    expect(() =>
+      ShieldStatsSchema.parse({
+        tabId: "tab-1",
+        blockedCount: 12,
+        engineState: "ready",
+      }),
+    ).not.toThrow();
+  });
+
+  it("allows a null tab for engine-wide state changes", () => {
+    expect(() =>
+      ShieldStatsSchema.parse({
+        tabId: null,
+        blockedCount: 0,
+        engineState: "loading",
+      }),
+    ).not.toThrow();
+  });
+
+  it("rejects negative counts and unknown states", () => {
+    expect(() =>
+      ShieldStatsSchema.parse({ tabId: "t", blockedCount: -1, engineState: "ready" }),
+    ).toThrow();
+    expect(() =>
+      ShieldStatsSchema.parse({ tabId: "t", blockedCount: 0, engineState: "99%" }),
+    ).toThrow();
   });
 });
 

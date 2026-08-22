@@ -2,6 +2,7 @@ import { z } from "zod";
 import { LOAD_STATES } from "../types/navigation.js";
 import type { NavigationState } from "../types/navigation.js";
 import type { TabSnapshot } from "../types/tab.js";
+import { SHIELD_ENGINE_STATES } from "../shield/verdict.js";
 
 export const TabIdSchema = z.string().min(1);
 
@@ -53,3 +54,11 @@ export const NavigationStateSchema: z.ZodType<NavigationState> = z.object({
   loadState: LoadStateSchema,
   errorCode: z.number().int().optional(),
 });
+
+export const ShieldStatsSchema = z.object({
+  tabId: TabIdSchema.nullable(),
+  blockedCount: z.number().int().min(0),
+  engineState: z.enum(SHIELD_ENGINE_STATES),
+});
+
+export type ShieldStats = z.infer<typeof ShieldStatsSchema>;

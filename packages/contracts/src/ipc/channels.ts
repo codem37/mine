@@ -15,6 +15,9 @@ export const IPC_EVENTS = {
   shell: {
     tabsUpdated: "mine:shell:tabs-updated",
   },
+  shield: {
+    statsUpdated: "mine:shield:stats-updated",
+  },
 } as const;
 
 type Flatten<T> = {
