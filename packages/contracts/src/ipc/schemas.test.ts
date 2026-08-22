@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   NavigateRequestSchema,
   NavigationStateSchema,
+  NewTabRequestSchema,
   TabListSchema,
   TabsUpdatedPayloadSchema,
 } from "./schemas.js";
@@ -60,6 +61,22 @@ describe("TabsUpdatedPayloadSchema", () => {
         { ...snapshot, loadState: "37%" },
       ]),
     ).toThrow();
+  });
+});
+
+describe("NewTabRequestSchema", () => {
+  it("accepts a tab opened with no initial url", () => {
+    expect(() => NewTabRequestSchema.parse({})).not.toThrow();
+  });
+
+  it("accepts an optional initial url", () => {
+    expect(() =>
+      NewTabRequestSchema.parse({ url: "https://example.com/" }),
+    ).not.toThrow();
+  });
+
+  it("rejects an initial url that is not absolute", () => {
+    expect(() => NewTabRequestSchema.parse({ url: "example.com" })).toThrow();
   });
 });
 

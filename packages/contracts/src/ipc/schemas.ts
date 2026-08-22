@@ -22,6 +22,12 @@ export const TabIdRequestSchema = z.object({
 
 export type TabIdRequest = z.infer<typeof TabIdRequestSchema>;
 
+export const NewTabRequestSchema = z.object({
+  url: UrlSchema.optional(),
+});
+
+export type NewTabRequest = z.infer<typeof NewTabRequestSchema>;
+
 export const TabSnapshotSchema: z.ZodType<TabSnapshot> = z.object({
   id: TabIdSchema,
   url: UrlSchema,
