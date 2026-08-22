@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer } from "electron";
-import { IPC_CHANNELS, IPC_EVENTS } from "@mine/contracts";
+import { IPC_CHANNELS, IPC_EVENTS } from "@mine/contracts/channels";
 import type {
   NavigateRequest,
   NewTabRequest,

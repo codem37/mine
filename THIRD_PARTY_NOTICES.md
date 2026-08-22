@@ -26,6 +26,10 @@ Consequences, accepted knowingly:
 
 | Component | License | Obligation | How we comply |
 |---|---|---|---|
+| Electron | MIT | Include copyright + permission notice in distributions | NOTICE generated at packaging time (Phase 3+); recorded here meanwhile |
+| zod | MIT | Include copyright + permission notice in distributions | Bundled into app bundle; NOTICE at packaging time |
+| esbuild | MIT | Include copyright + permission notice in distributions | Build-time tool only — never ships in the installer |
+| TypeScript, vitest, pnpm | Apache-2.0 / MIT / MIT | Toolchain only, no distribution obligation | Dev machine and CI exclusively |
 | adblock-rust | MPL-2.0 | File-level copyleft on modified files | Consumed as a dependency, not forked |
 | EasyList | CC BY-SA 3.0 | Attribution, share-alike on redistribution | Fetched at runtime, never bundled |
 | uBlock Origin filter lists | GPL-3.0 | Attribution, share-alike on redistribution | Fetched at runtime, never bundled |
