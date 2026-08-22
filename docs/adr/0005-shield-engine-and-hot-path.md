@@ -50,3 +50,7 @@ in THIRD_PARTY_NOTICES.md: engine ships, data is fetched at runtime.
 - First run without network = honest degraded mode, visibly stated.
 - Fingerprint randomisation remains deferred per the pre-Phase-2 spike record
   (docs/spikes/0001) unless a future spike overturns it.
+- Known deferred risk: filter list URLs are unpinned against third-party repo
+  layouts — no mirror fallback, no staleness detection (surfaced when uBO
+  removed `filters.min.txt` upstream). Accepted knowingly; revisit only if a
+  source dies in practice.
