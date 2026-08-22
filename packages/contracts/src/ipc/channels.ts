@@ -8,12 +8,17 @@ export const IPC_CHANNELS = {
     goForward: "mine:shell:go-forward",
     reload: "mine:shell:reload",
     stop: "mine:shell:stop",
+    minimizeWindow: "mine:shell:minimize-window",
+    toggleMaximizeWindow: "mine:shell:toggle-maximize-window",
+    closeWindow: "mine:shell:close-window",
   },
 } as const;
 
 export const IPC_EVENTS = {
   shell: {
     tabsUpdated: "mine:shell:tabs-updated",
+    windowStateChanged: "mine:shell:window-state-changed",
+    telemetryUpdated: "mine:shell:telemetry-updated",
   },
   shield: {
     statsUpdated: "mine:shield:stats-updated",

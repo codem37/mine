@@ -62,3 +62,20 @@ export const ShieldStatsSchema = z.object({
 });
 
 export type ShieldStats = z.infer<typeof ShieldStatsSchema>;
+
+export const UnitRequestSchema = z.object({}).strict();
+
+export const WindowStateSchema = z.object({
+  maximized: z.boolean(),
+});
+
+export type WindowState = z.infer<typeof WindowStateSchema>;
+
+export const TelemetrySchema = z.object({
+  cpuPercent: z.number().min(0).max(100).nullable(),
+  ramMb: z.number().min(0).nullable(),
+  gpuPercent: z.null(),
+  netRequestsPerMinute: z.number().int().min(0),
+});
+
+export type Telemetry = z.infer<typeof TelemetrySchema>;

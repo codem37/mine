@@ -1,1 +1,1 @@
-export const CHROME_HEIGHT = 40;
+export const CHROME_HEIGHT = 44;
