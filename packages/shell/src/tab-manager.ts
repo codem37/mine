@@ -66,6 +66,10 @@ export class TabManager {
     return null;
   }
 
+  ownerHandle(id: TabId): Electron.WebContents | undefined {
+    return this.tabs.get(id)?.view.webContents;
+  }
+
   snapshot(): TabsUpdatedPayload {
     const tabs: TabSnapshot[] = [];
     for (const id of this.order) {

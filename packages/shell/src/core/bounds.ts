@@ -1,4 +1,4 @@
-import { CHROME_HEIGHT } from "@mine/contracts";
+import { CHROME_HEIGHT, TELEMETRY_RAIL_WIDTH } from "@mine/contracts";
 
 export interface Rect {
   readonly x: number;
@@ -14,7 +14,7 @@ export function contentBounds(
   return {
     x: 0,
     y: CHROME_HEIGHT,
-    width: windowWidth,
+    width: Math.max(0, windowWidth - TELEMETRY_RAIL_WIDTH),
     height: Math.max(0, windowHeight - CHROME_HEIGHT),
   };
 }

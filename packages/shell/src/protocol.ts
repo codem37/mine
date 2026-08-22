@@ -26,11 +26,11 @@ export function attachChromeProtocol(
 ): void {
   target.protocol.handle("mine", async (request) => {
     const url = new URL(request.url);
-    const raw =
-      url.pathname === "/" || url.pathname === ""
-        ? "/index.html"
-        : url.pathname;
-    const resolved = resolveSafe(root, raw);
+    let rel = url.pathname.replace(/^\/+/, "");
+    if (rel === "") {
+      rel = url.host === "newtab" ? "newtab.html" : "index.html";
+    }
+    const resolved = resolveSafe(root, rel);
     if (resolved === null) {
       return new Response("forbidden", { status: 403 });
     }

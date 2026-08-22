@@ -62,7 +62,7 @@ export function createShieldBridge(): ShieldBridge {
   const requestRate = new RequestRate();
   const native = loadShieldNative(nativeDirectory());
   if (native !== null) {
-    engine.attachNative(native);
+    engine.attachNative(new native.ShieldEngine());
   }
 
   let emit: SignalEmitter = () => {};

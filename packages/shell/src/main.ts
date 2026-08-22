@@ -1,5 +1,7 @@
 import { app, BrowserWindow } from "electron";
 import { fileURLToPath } from "node:url";
+import { writeFile, mkdir } from "node:fs/promises";
+import path from "node:path";
 import { IPC_EVENTS } from "@mine/contracts";
 import { ShieldStatsSchema, WindowStateSchema } from "@mine/contracts";
 import { stripTrackingParams } from "@mine/shield";
@@ -18,6 +20,7 @@ import { TelemetrySampler } from "./telemetry.js";
 declarePrivilegedScheme();
 
 const history: HistoryEntry[] = [];
+let bridgeRef: ReturnType<typeof createShieldBridge> | null = null;
 let manager: TabManager | null = null;
 let mainWindow: BrowserWindow | null = null;
 
@@ -31,6 +34,7 @@ function emitWindowState(): void {
 
 function bootstrap(): void {
   const bridge = createShieldBridge();
+  bridgeRef = bridge;
   registerSessionHook(bridge.hookSession);
   defaultSession().setPermissionRequestHandler((_wc, _permission, callback) => {
     callback(false);
@@ -52,27 +56,26 @@ function bootstrap(): void {
   });
   mainWindow = win;
 
-  manager = new TabManager(
-    win,
-    () => {
-      if (!win.isDestroyed() && manager !== null) {
-        win.webContents.send(IPC_EVENTS.shell.tabsUpdated, manager.snapshot());
-      }
-    },
-    history,
-    {
-      stripParams: stripTrackingParams,
-      internalPreloadPath: fileURLToPath(
-        new URL("./preload.cjs", import.meta.url),
-      ),
-    },
-  );
+  const sendTabs = (): void => {
+    if (!win.isDestroyed() && manager !== null) {
+      win.webContents.send(IPC_EVENTS.shell.tabsUpdated, manager.snapshot());
+    }
+  };
+  manager = new TabManager(win, sendTabs, history, {
+    stripParams: stripTrackingParams,
+    internalPreloadPath: fileURLToPath(
+      new URL("./preload.cjs", import.meta.url),
+    ),
+  });
   registerIpcHandlers(manager, win);
 
   win.on("maximize", emitWindowState);
   win.on("unmaximize", emitWindowState);
   win.on("restore", emitWindowState);
-  win.webContents.on("did-finish-load", emitWindowState);
+  win.webContents.on("did-finish-load", () => {
+    emitWindowState();
+    sendTabs();
+  });
 
   const sampler = new TelemetrySampler(
     (snapshot) => {
@@ -106,6 +109,55 @@ function bootstrap(): void {
 
   void win.loadURL("mine://chrome/");
   void manager.createTab();
+
+  const screenshotDir = process.env.MINE_SCREENSHOT_DIR;
+  if (screenshotDir !== undefined && screenshotDir.length > 0) {
+    void visualSmoke(win, screenshotDir);
+  }
+}
+
+async function visualSmoke(
+  win: BrowserWindow,
+  dir: string,
+): Promise<void> {
+  await mkdir(dir, { recursive: true });
+  await new Promise((resolve) => setTimeout(resolve, 3000));
+  const diag = {
+    engineState: bridgeRef?.engine.state ?? "unknown",
+    nativeAttached: bridgeRef?.engine.hasNative ?? false,
+    lastError: bridgeRef?.engine.lastError ?? null,
+    blockedTotal: bridgeRef?.counts.total ?? -1,
+    tabs: manager?.snapshot().tabs ?? [],
+  };
+  await writeFile(
+    path.join(dir, "diag.json"),
+    JSON.stringify(diag, null, 2),
+  );
+  if (win.isDestroyed()) return;
+  win.show();
+  const capture = async (wc: Electron.WebContents): Promise<Buffer | null> => {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const image = await wc.capturePage();
+      const png = image.toPNG();
+      if (png.length > 1000) return png;
+      await new Promise((resolve) => setTimeout(resolve, 400));
+    }
+    return null;
+  };
+  const chrome = await capture(win.webContents);
+  if (chrome !== null) {
+    await writeFile(path.join(dir, "chrome.png"), chrome);
+  }
+  const tabs = manager?.snapshot().tabs ?? [];
+  for (const tab of tabs) {
+    const handle = manager?.ownerHandle(tab.id);
+    if (handle === undefined) continue;
+    const png = await capture(handle);
+    if (png !== null) {
+      await writeFile(path.join(dir, `view-${tab.id}.png`), png);
+    }
+  }
+  app.exit(0);
 }
 
 app.whenReady().then(() => {
