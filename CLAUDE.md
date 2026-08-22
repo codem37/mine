@@ -93,4 +93,4 @@ renderer. This is decided now so nobody rediscovers it mid-build.
   tests actually execute if Smart App Control or similar blocks local runs.
 
 ## Current phase
-Phase 0. See docs/ROADMAP.md. Do not build ahead of the current phase.
+Phase 1. See docs/ROADMAP.md. Do not build ahead of the current phase.
