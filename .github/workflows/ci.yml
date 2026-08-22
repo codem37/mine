@@ -32,6 +32,16 @@ jobs:
       - name: Test
         run: pnpm -r test
 
+  rust:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust tests
+        run: cargo test --manifest-path packages/shield/native/Cargo.toml
+
       - name: Publish diagnostics
         if: failure()
         env:
