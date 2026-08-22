@@ -24,16 +24,20 @@ const LIB_EXT: Record<string, string> = {
 
 const CANDIDATES = ["mine-shield.node", "index.node", `mine_shield.${LIB_EXT[process.platform] ?? ""}`];
 
-export function loadShieldNative(dir: string): ShieldEngineNative | null {
+export interface ShieldEngineModule {
+  ShieldEngine: new () => ShieldEngineNative;
+}
+
+export function loadShieldNative(dir: string): ShieldEngineModule | null {
   const require = createRequire(import.meta.url);
   for (const name of CANDIDATES) {
     if (name.length === 0) continue;
     const full = path.join(dir, name);
     if (!existsSync(full)) continue;
     try {
-      const mod = require(full) as {
-        default?: ShieldEngineNative;
-      } & ShieldEngineNative;
+      const mod = require(full) as ShieldEngineModule & {
+        default?: ShieldEngineModule;
+      };
       return mod.default ?? mod;
     } catch {
       continue;

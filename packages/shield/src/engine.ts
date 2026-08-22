@@ -13,10 +13,19 @@ export interface NativeEngineLike {
 export class ShieldEngine {
   #native: NativeEngineLike | null = null;
   #state: ShieldEngineState = "uninitialised";
+  #lastError: string | null = null;
   readonly #listeners = new Set<(state: ShieldEngineState) => void>();
 
   get state(): ShieldEngineState {
     return this.#state;
+  }
+
+  get hasNative(): boolean {
+    return this.#native !== null;
+  }
+
+  get lastError(): string | null {
+    return this.#lastError;
   }
 
   onStateChange(listener: (state: ShieldEngineState) => void): () => void {
@@ -30,6 +39,7 @@ export class ShieldEngine {
 
   async loadLists(fetchLists: () => Promise<string[]>): Promise<void> {
     if (this.#native === null) {
+      this.#lastError = "no native engine attached";
       this.#setState("failed");
       return;
     }
@@ -42,7 +52,10 @@ export class ShieldEngine {
       }
       this.#native.replaceFilters(lists);
       this.#setState("ready");
-    } catch {
+      this.#lastError = null;
+    } catch (error) {
+      this.#lastError =
+        error instanceof Error ? error.message : String(error);
       this.#setState("failed");
     }
   }
