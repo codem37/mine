@@ -1,9 +1,25 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
+import { CHROME_HEIGHT, TELEMETRY_RAIL_WIDTH } from "@mine/contracts";
+
+const injectedRoot = `:root {
+  --hud-chrome-height: ${CHROME_HEIGHT}px;
+  --hud-rail-width: ${TELEMETRY_RAIL_WIDTH}px;
+}`;
+
+const contractsLayoutVars = {
+  name: "mine-contracts-layout-vars",
+  transform(code: string, id: string): string | undefined {
+    if (id.endsWith("tokens.css")) {
+      return `${code}\n${injectedRoot}\n`;
+    }
+    return undefined;
+  },
+};
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), contractsLayoutVars],
   base: "./",
   build: {
     outDir: "dist",

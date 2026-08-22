@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CHROME_HEIGHT } from "@mine/contracts";
+import { CHROME_HEIGHT, TELEMETRY_RAIL_WIDTH } from "@mine/contracts";
 
 const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
 const layoutCss = readFileSync(new URL("./chrome.css", import.meta.url), "utf8");
@@ -15,9 +15,7 @@ function token(name: string): string {
 function luminance(hex: string): number {
   const channels = [0, 2, 4].map((i) => {
     const raw = Number.parseInt(hex.slice(1 + i, 3 + i), 16) / 255;
-    return raw <= 0.03928
-      ? raw / 12.92
-      : ((raw + 0.055) / 1.055) ** 2.4;
+    return raw <= 0.03928 ? raw / 12.92 : ((raw + 0.055) / 1.055) ** 2.4;
   });
   return (
     0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!
@@ -61,14 +59,25 @@ describe("HUD token contrast (WCAG 4.5:1 for text)", () => {
   });
 });
 
-describe("shared layout constants (ADR 0002)", () => {
-  it("titlebar height matches contracts CHROME_HEIGHT — one number, one source", () => {
-    expect(layoutCss).toContain(`height: ${CHROME_HEIGHT}px;`);
-    const occurrences = layoutCss.split(`height: ${CHROME_HEIGHT}px`).length - 1;
-    expect(occurrences).toBeGreaterThanOrEqual(1);
+describe("shared layout constants flow from contracts (ADR 0002)", () => {
+  it("chrome.css consumes the injected custom properties, not hand-copied pixels", () => {
+    expect(layoutCss).toContain("height: var(--hud-chrome-height);");
+    expect(layoutCss).toContain("top: var(--hud-chrome-height);");
+    expect(layoutCss).toContain("width: var(--hud-rail-width);");
   });
 
-  it("telemetry rail starts exactly below the chrome bar", () => {
-    expect(layoutCss).toContain(`top: ${CHROME_HEIGHT}px;`);
+  it(`no literal px may shadow a contracts value (${CHROME_HEIGHT}, ${TELEMETRY_RAIL_WIDTH})`, () => {
+    expect(layoutCss).not.toContain(`height: ${CHROME_HEIGHT}px`);
+    expect(layoutCss).not.toContain(`top: ${CHROME_HEIGHT}px`);
+    expect(layoutCss).not.toContain(`width: ${TELEMETRY_RAIL_WIDTH}px`);
+  });
+
+  it("vite config wires the injection plugin that defines those properties", () => {
+    const viteConfig = readFileSync(
+      new URL("../vite.config.ts", import.meta.url),
+      "utf8",
+    );
+    expect(viteConfig).toContain("--hud-chrome-height");
+    expect(viteConfig).toContain("--hud-rail-width");
   });
 });

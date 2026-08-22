@@ -7,7 +7,7 @@
 .titlebar {
   position: fixed;
   inset: 0 0 auto 0;
-  height: 44px;
+  height: var(--hud-chrome-height);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -118,10 +118,10 @@
 
 .rail {
   position: fixed;
-  top: 44px;
+  top: var(--hud-chrome-height);
   right: 0;
   bottom: 0;
-  width: 168px;
+  width: var(--hud-rail-width);
   padding: 10px;
   background: var(--hud-surface);
   border-left: var(--hud-stroke) solid var(--hud-line);
