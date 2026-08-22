@@ -24,9 +24,15 @@ in THIRD_PARTY_NOTICES.md: engine ships, data is fetched at runtime.
   during navigation before any load begins. Strip list is shield-owned data.
 - **Stats**: shell aggregates verdicts per tab and emits
   `mine:shield:stats-updated` (zod-validated at that IPC boundary).
-- **Benchmark gate**: a criterion benchmark against the full loaded list set;
-  p50/p90/p99 recorded in the phase report. "Under 1ms" claimed only with
-  numbers attached.
+- **Benchmark gate**: lookup latency measured against the full loaded list
+  set; p50/p90/p99/p99.9/max recorded in the phase report. "Under 1ms"
+  claimed only with numbers attached.
+  - *Amendment (Phase 2 ship)*: implemented as a deterministic percentile
+    harness (`native/examples/lookup-bench.rs`, `cargo run --release --example
+    lookup-bench`) instead of criterion — criterion reports means/medians but
+    not tail percentiles, and this gate is specifically about the tail.
+    Individual per-request timings include `Request` construction, matching
+    the production call path.
 
 ## Alternatives rejected
 - **A JS/WASM filter engine in-repo**: reinvents what adblock-rust already

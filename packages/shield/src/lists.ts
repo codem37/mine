@@ -15,7 +15,7 @@ export const FILTER_SOURCES: readonly FilterSource[] = [
   },
   {
     name: "ublock-filters",
-    url: "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.min.txt",
+    url: "https://raw.githubusercontent.com/uBlockOrigin/uAssets/master/filters/filters.txt",
     optional: false,
   },
   {
