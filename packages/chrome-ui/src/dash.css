@@ -1,0 +1,79 @@
+.dash {
+  height: 100vh;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle at 50% 45%, #0e1720 0%, var(--hud-bg) 70%);
+}
+
+.dash__radial {
+  width: min(80vmin, 460px);
+}
+
+.dash__orbit {
+  fill: none;
+  stroke: var(--hud-line);
+  stroke-dasharray: 3 6;
+}
+
+.dash__orbit--inner {
+  stroke-dasharray: none;
+  opacity: 0.5;
+}
+
+.dash__core {
+  fill: var(--hud-text);
+  font-size: 26px;
+  letter-spacing: 8px;
+}
+
+.dash__core-sub {
+  fill: var(--hud-text-dim);
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.dash__node circle {
+  fill: var(--hud-surface-raised);
+  stroke: var(--hud-cyan-dim);
+  stroke-width: 1;
+  transition: transform var(--hud-dur-fast) ease, opacity var(--hud-dur-fast) ease;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.dash__node {
+  cursor: pointer;
+}
+
+.dash__node:hover circle,
+.dash__node:focus-visible circle {
+  stroke: var(--hud-cyan);
+  transform: scale(1.08);
+}
+
+.dash__node text {
+  fill: var(--hud-text);
+  font-size: 11px;
+}
+
+.dash__node--future {
+  cursor: default;
+  opacity: 0.55;
+}
+
+.dash__node--future circle {
+  stroke: var(--hud-line);
+  fill: var(--hud-surface);
+}
+
+.dash__phase {
+  fill: var(--hud-amber);
+  font-size: 9px;
+}
+
+.dash__note {
+  color: var(--hud-text-dim);
+  font-size: 11px;
+  margin-top: 12px;
+}

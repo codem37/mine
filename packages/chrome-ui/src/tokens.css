@@ -1,0 +1,68 @@
+:root {
+  --hud-bg: #0a0f14;
+  --hud-surface: #101820;
+  --hud-surface-raised: #16212b;
+  --hud-line: #223140;
+  --hud-cyan: #4dd8e6;
+  --hud-cyan-dim: #2a8a94;
+  --hud-amber: #f0b429;
+  --hud-red: #f05d5d;
+  --hud-text: #d7e5ea;
+  --hud-text-dim: #8fa6b0;
+
+  --hud-radius: 6px;
+  --hud-chamfer: 10px;
+  --hud-stroke: 1px;
+
+  --hud-dur-fast: 120ms;
+  --hud-dur-move: 180ms;
+  --hud-dur-max: 200ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--hud-bg);
+  color: var(--hud-text);
+  font-family:
+    "Segoe UI",
+    system-ui,
+    sans-serif;
+  font-size: 13px;
+  overflow: hidden;
+  user-select: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: var(--hud-surface);
+  border: var(--hud-stroke) solid var(--hud-line);
+  border-radius: var(--hud-radius);
+  padding: 3px 9px;
+  cursor: pointer;
+  transition:
+    transform var(--hud-dur-fast) ease,
+    opacity var(--hud-dur-fast) ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+}
+
+button:focus-visible {
+  outline: var(--hud-stroke) solid var(--hud-cyan);
+  outline-offset: 1px;
+}
