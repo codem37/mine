@@ -17,6 +17,15 @@ export const IPC_CHANNELS = {
     getStats: "mine:shield:get-stats",
     setEnabled: "mine:shield:set-enabled",
   },
+  fetcher: {
+    getDownloads: "mine:fetcher:get-downloads",
+    pauseDownload: "mine:fetcher:pause-download",
+    resumeDownload: "mine:fetcher:resume-download",
+    cancelDownload: "mine:fetcher:cancel-download",
+    retryDownload: "mine:fetcher:retry-download",
+    openFile: "mine:fetcher:open-file",
+    showInFolder: "mine:fetcher:show-in-folder",
+  },
 } as const;
 
 export const IPC_EVENTS = {
@@ -27,6 +36,9 @@ export const IPC_EVENTS = {
   },
   shield: {
     statsUpdated: "mine:shield:stats-updated",
+  },
+  fetcher: {
+    downloadsUpdated: "mine:fetcher:downloads-updated",
   },
 } as const;
 

@@ -33,6 +33,7 @@ export const TabSnapshotSchema: z.ZodType<TabSnapshot> = z.object({
   id: TabIdSchema,
   url: UrlSchema,
   title: z.string(),
+  favicons: z.array(z.string()).optional(),
   loadState: LoadStateSchema,
   canGoBack: z.boolean(),
   canGoForward: z.boolean(),
@@ -89,3 +90,48 @@ export const TelemetrySchema = z.object({
 });
 
 export type Telemetry = z.infer<typeof TelemetrySchema>;
+
+export const DOWNLOAD_STATES = [
+  "queued",
+  "downloading",
+  "paused",
+  "resuming",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
+
+export const DownloadStateSchema = z.enum(DOWNLOAD_STATES);
+export type DownloadState = z.infer<typeof DownloadStateSchema>;
+
+export const DownloadSegmentSchema = z.object({
+  id: z.number().int().min(0),
+  progressPercent: z.number().min(0).max(100),
+  active: z.boolean(),
+});
+
+export type DownloadSegment = z.infer<typeof DownloadSegmentSchema>;
+
+export const DownloadItemSchema = z.object({
+  id: z.string().min(1),
+  filename: z.string().min(1),
+  url: UrlSchema,
+  state: DownloadStateSchema,
+  downloadedBytes: z.number().min(0),
+  totalBytes: z.number().min(0),
+  speedBytesPerSec: z.number().min(0),
+  etaSeconds: z.number().min(0).nullable(),
+  segments: z.array(DownloadSegmentSchema),
+});
+
+export type DownloadItem = z.infer<typeof DownloadItemSchema>;
+
+export const DownloadIdRequestSchema = z.object({
+  downloadId: z.string().min(1),
+});
+
+export type DownloadIdRequest = z.infer<typeof DownloadIdRequestSchema>;
+
+export const DownloadsUpdatedPayloadSchema = z.array(DownloadItemSchema);
+export type DownloadsUpdatedPayload = z.infer<typeof DownloadsUpdatedPayloadSchema>;
+

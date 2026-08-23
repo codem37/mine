@@ -1,4 +1,7 @@
 import type {
+  DownloadIdRequest,
+  DownloadItem,
+  DownloadsUpdatedPayload,
   NavigateRequest,
   NewTabRequest,
   Result,
@@ -31,6 +34,14 @@ export interface MineBridge {
   onShieldStats(cb: (payload: ShieldStats) => void): () => void;
   onWindowState(cb: (payload: WindowState) => void): () => void;
   onTelemetry(cb: (payload: Telemetry) => void): () => void;
+  getDownloads(): Promise<Result<DownloadsUpdatedPayload>>;
+  pauseDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
+  resumeDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
+  cancelDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
+  retryDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
+  openDownloadFile(payload: DownloadIdRequest): Promise<InvokeResult>;
+  showDownloadInFolder(payload: DownloadIdRequest): Promise<InvokeResult>;
+  onDownloadsUpdated(cb: (payload: DownloadsUpdatedPayload) => void): () => void;
 }
 
 declare global {

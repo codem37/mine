@@ -51,6 +51,15 @@ describe("TabsUpdatedPayloadSchema", () => {
     ).not.toThrow();
   });
 
+  it("accepts tab snapshots with favicons array", () => {
+    const withFavicon = {
+      ...snapshot,
+      favicons: ["https://example.com/favicon.ico"],
+    };
+    const parsed = TabListSchema.parse([withFavicon]);
+    expect(parsed[0]?.favicons).toEqual(["https://example.com/favicon.ico"]);
+  });
+
   it("allows no active tab", () => {
     expect(() =>
       TabsUpdatedPayloadSchema.parse({ tabs: [], activeTabId: null }),

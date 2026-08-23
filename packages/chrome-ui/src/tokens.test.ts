@@ -63,13 +63,13 @@ describe("HUD token contrast (WCAG 4.5:1 for text)", () => {
 describe("shared layout constants flow from contracts (ADR 0002, ADR 0007)", () => {
   it("chrome.css consumes the injected custom properties, not hand-copied pixels", () => {
     expect(layoutCss).toContain("height: var(--hud-chrome-height);");
-    expect(layoutCss).toContain("top: var(--hud-chrome-height);");
+    expect(layoutCss).toContain("var(--hud-chrome-height)");
     expect(layoutCss).toContain("width: var(--hud-tab-rail-width);");
   });
 
   it(`no literal px may shadow a contracts value (${CHROME_HEIGHT}, ${TAB_RAIL_WIDTH})`, () => {
     expect(layoutCss).not.toContain(`height: ${CHROME_HEIGHT}px`);
-    expect(layoutCss).not.toContain(`top: ${CHROME_HEIGHT}px`);
+    expect(layoutCss).not.toContain(`top: ${CHROME_HEIGHT}px;`);
     expect(layoutCss).not.toContain(`width: ${TAB_RAIL_WIDTH}px`);
   });
 

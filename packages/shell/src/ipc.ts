@@ -1,5 +1,6 @@
 import { ipcMain } from "electron";
 import {
+  DownloadIdRequestSchema,
   IPC_CHANNELS,
   NavigateRequestSchema,
   NewTabRequestSchema,
@@ -15,6 +16,8 @@ import { parsePayload } from "./core/ipc-parse.js";
 export interface IpcDeps {
   readonly currentShieldStats: () => unknown;
   readonly setShieldEnabled: (enabled: boolean) => void;
+  readonly currentDownloads?: () => unknown[];
+  readonly onDownloadAction?: (action: string, id: string) => void;
 }
 
 export function registerIpcHandlers(
@@ -117,4 +120,39 @@ export function registerIpcHandlers(
       return parsePayload(ShieldStatsSchema, deps.currentShieldStats());
     },
   );
+
+  // Fetcher / Downloads Handlers
+  ipcMain.handle(IPC_CHANNELS.fetcher.getDownloads, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.currentDownloads?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.pauseDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("pause", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.resumeDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("resume", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.cancelDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("cancel", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.retryDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("retry", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
 }

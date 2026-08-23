@@ -1,16 +1,48 @@
 import { useEffect, useState } from "react";
+import type { DownloadItem, Telemetry } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
 import { NavControls } from "./components/NavControls.js";
 import { WindowControls } from "./components/WindowControls.js";
+import { NetworkSpeedIndicator } from "./components/NetworkSpeedIndicator.js";
+import { SiteInfoPopup } from "./components/SiteInfoPopup.js";
+import { MainMenu } from "./components/MainMenu.js";
+import { DownloadSystem } from "./components/DownloadSystem.js";
 import { useLiveStats } from "./use-live-stats.js";
 
 export function App(): JSX.Element {
   const { tabs: liveTabs, shield } = useLiveStats();
   const [maximized, setMaximized] = useState(false);
+  const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
+  const [downloads, setDownloads] = useState<readonly DownloadItem[]>([]);
+  const [siteInfoOpen, setSiteInfoOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [downloadsDrawerOpen, setDownloadsDrawerOpen] = useState(false);
 
   useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
+  useEffect(() => window.mine.onTelemetry(setTelemetry), []);
+
+  useEffect(() => {
+    let active = true;
+    if (window.mine.getDownloads) {
+      void window.mine.getDownloads().then((res) => {
+        if (active && res.ok) setDownloads(res.value);
+      });
+    }
+    if (window.mine.onDownloadsUpdated) {
+      const off = window.mine.onDownloadsUpdated((items) => {
+        if (active) setDownloads(items);
+      });
+      return () => {
+        active = false;
+        off();
+      };
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const tabsPayload = liveTabs ?? { tabs: [], activeTabId: null };
   const active =
@@ -20,20 +52,58 @@ export function App(): JSX.Element {
     <div className="hud">
       <header className="titlebar">
         <NavControls active={active} />
+        
         <AddressBar
           activeTabId={tabsPayload.activeTabId}
           activeUrl={active?.url ?? ""}
           shield={shield}
+          onToggleSiteInfo={() => setSiteInfoOpen(!siteInfoOpen)}
         />
-        <div className="avatar" aria-hidden="true">●</div>
+
+        <NetworkSpeedIndicator
+          netRequestsPerMinute={telemetry?.netRequestsPerMinute}
+        />
+
+        <button
+          type="button"
+          className="glass-btn"
+          aria-label="main menu"
+          title="Main Menu"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          ⋮
+        </button>
+
         <WindowControls maximized={maximized} />
       </header>
+
       <aside className="rail--tabs" aria-label="tab rail">
         <TabStrip
           tabs={tabsPayload.tabs}
           activeTabId={tabsPayload.activeTabId}
         />
       </aside>
+
+      {siteInfoOpen ? (
+        <SiteInfoPopup
+          activeUrl={active?.url ?? ""}
+          shield={shield}
+          onClose={() => setSiteInfoOpen(false)}
+        />
+      ) : null}
+
+      {menuOpen ? (
+        <MainMenu
+          onClose={() => setMenuOpen(false)}
+          onOpenDownloads={() => setDownloadsDrawerOpen(true)}
+        />
+      ) : null}
+
+      <DownloadSystem
+        downloads={downloads}
+        showFullList={downloadsDrawerOpen}
+        onCloseList={() => setDownloadsDrawerOpen(false)}
+      />
     </div>
   );
 }

@@ -3,9 +3,10 @@ import type { ShieldStats, TabId } from "@mine/contracts";
 import type { JSX } from "react";
 
 interface Props {
-  activeTabId: TabId | null;
-  activeUrl: string;
-  shield: ShieldStats | null;
+  readonly activeTabId: TabId | null;
+  readonly activeUrl: string;
+  readonly shield: ShieldStats | null;
+  readonly onToggleSiteInfo?: () => void;
 }
 
 function ShieldGlyph(): JSX.Element {
@@ -28,10 +29,18 @@ function ShieldGlyph(): JSX.Element {
   );
 }
 
-export function AddressBar({ activeTabId, activeUrl, shield }: Props): JSX.Element {
+export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }: Props): JSX.Element {
   const [value, setValue] = useState(activeUrl);
   const focused = useRef(false);
   const shieldOn = shield?.enabled !== false;
+
+  let isSecure = true;
+  try {
+    const parsed = new URL(activeUrl);
+    isSecure = parsed.protocol === "https:" || parsed.protocol === "mine:";
+  } catch {
+    // default
+  }
 
   useEffect(() => {
     if (!focused.current) setValue(activeUrl);
@@ -54,6 +63,16 @@ export function AddressBar({ activeTabId, activeUrl, shield }: Props): JSX.Eleme
         });
       }}
     >
+      <button
+        type="button"
+        className="addressbar__security"
+        title="Site Information"
+        onClick={onToggleSiteInfo}
+        aria-label="Site security status"
+      >
+        {isSecure ? "🔒" : "⚠️"}
+      </button>
+
       <input
         value={value}
         spellCheck={false}
@@ -68,6 +87,7 @@ export function AddressBar({ activeTabId, activeUrl, shield }: Props): JSX.Eleme
         }}
         onChange={(e) => setValue(e.target.value)}
       />
+
       <button
         type="button"
         className={
@@ -76,16 +96,13 @@ export function AddressBar({ activeTabId, activeUrl, shield }: Props): JSX.Eleme
         aria-label={shieldOn ? "turn shield off" : "turn shield on"}
         aria-pressed={shieldOn}
         disabled={shield === null}
-        title={shieldOn ? "shield is on" : "shield is off"}
-        onClick={() => {
-          void window.mine
-            .setShieldEnabled({ enabled: !shieldOn })
-            .then((result) => {
-              if (!result.ok) console.error(result.error.message);
-            });
-        }}
+        title={shieldOn ? "Shield is active (click for page info)" : "Shield is disabled"}
+        onClick={onToggleSiteInfo}
       >
         <ShieldGlyph />
+        {shield?.blockedCount ? (
+          <span className="addressbar__shield-badge">{shield.blockedCount}</span>
+        ) : null}
       </button>
     </form>
   );

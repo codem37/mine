@@ -26,6 +26,7 @@ interface InternalTab {
   partitionName: string | null;
   loadState: LoadState;
   errorCode?: number;
+  favicons?: string[];
 }
 
 export interface HistoryEntry {
@@ -175,6 +176,7 @@ export class TabManager {
     if (partition.value !== tab.partitionName) {
       this.swapSessionView(tab, partition.value);
     }
+    tab.favicons = [];
     tab.loadState = "started";
     delete tab.errorCode;
     void tab.view.webContents.loadURL(parsed.toString()).catch(() => {});
@@ -296,6 +298,10 @@ export class TabManager {
       }
     });
     wc.on("page-title-updated", () => this.notify());
+    wc.on("page-favicon-updated", (_e, favicons) => {
+      tab.favicons = favicons;
+      this.notify();
+    });
   }
 
   private pushHistory(url: string, title: string): void {
@@ -331,6 +337,10 @@ export class TabManager {
       id: tab.id,
       url: wc.getURL() || NEW_TAB_URL,
       title: wc.getTitle() || wc.getURL(),
+      favicons:
+        tab.favicons !== undefined && tab.favicons.length > 0
+          ? tab.favicons
+          : undefined,
       loadState: tab.loadState,
       canGoBack: wc.navigationHistory.canGoBack(),
       canGoForward: wc.navigationHistory.canGoForward(),

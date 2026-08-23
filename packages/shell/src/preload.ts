@@ -82,6 +82,29 @@ const api = {
       ipcRenderer.removeListener(IPC_EVENTS.shell.telemetryUpdated, listener);
     };
   },
+  getDownloads: (): Promise<Result<import("@mine/contracts").DownloadsUpdatedPayload>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.getDownloads, {}),
+  pauseDownload: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.pauseDownload, payload),
+  resumeDownload: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.resumeDownload, payload),
+  cancelDownload: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.cancelDownload, payload),
+  retryDownload: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.retryDownload, payload),
+  openDownloadFile: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.openFile, payload),
+  showDownloadInFolder: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.showInFolder, payload),
+  onDownloadsUpdated: (callback: (payload: import("@mine/contracts").DownloadsUpdatedPayload) => void): (() => void) => {
+    const listener = (_event: unknown, payload: import("@mine/contracts").DownloadsUpdatedPayload): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.fetcher.downloadsUpdated, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.fetcher.downloadsUpdated, listener);
+    };
+  },
 };
 
 export type MineBridge = typeof api;

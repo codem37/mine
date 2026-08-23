@@ -1,43 +1,175 @@
+/* ============================================================
+   mine new-tab dashboard — glassmorphism HUD
+   ============================================================ */
+
 .dash {
+  position: relative;
   height: 100vh;
   display: grid;
   place-items: center;
+  padding: 20px;
   background:
-    radial-gradient(circle at 50% 45%, #0e1720 0%, var(--hud-bg) 70%);
+    radial-gradient(circle at 50% 25%, rgba(88, 166, 255, 0.08) 0%, transparent 60%),
+    radial-gradient(circle at 50% 50%, #121824 0%, var(--hud-bg) 80%);
+  overflow: hidden;
+}
+
+/* Atmospheric blurred particles floating behind frosted glass */
+.dash__particles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.dash__particle {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px);
+  opacity: 0.25;
+  animation: floatParticle 18s ease-in-out infinite alternate;
+}
+
+.dash__particle--1 {
+  width: 280px;
+  height: 280px;
+  background: rgba(88, 166, 255, 0.4);
+  top: 15%;
+  left: 20%;
+}
+
+.dash__particle--2 {
+  width: 320px;
+  height: 320px;
+  background: rgba(42, 138, 148, 0.35);
+  bottom: 20%;
+  right: 22%;
+  animation-delay: -6s;
+}
+
+.dash__particle--3 {
+  width: 240px;
+  height: 240px;
+  background: rgba(147, 112, 219, 0.25);
+  top: 45%;
+  right: 30%;
+  animation-delay: -12s;
+}
+
+.dash__particle--4 {
+  width: 200px;
+  height: 200px;
+  background: rgba(88, 166, 255, 0.2);
+  bottom: 10%;
+  left: 35%;
+  animation-delay: -3s;
+}
+
+@keyframes floatParticle {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  50% {
+    transform: translate(30px, -40px) scale(1.1);
+  }
+  100% {
+    transform: translate(-25px, 35px) scale(0.95);
+  }
+}
+
+.dash__panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 32px 20px;
+  background: var(--hud-surface);
+  backdrop-filter: blur(var(--hud-glass-blur));
+  -webkit-backdrop-filter: blur(var(--hud-glass-blur));
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: 20px;
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 var(--hud-bevel-light);
+  width: min(92vw, 480px);
+}
+
+.dash__search {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  margin-bottom: 16px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: 24px;
+  backdrop-filter: blur(16px);
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+}
+
+.dash__search:focus-within {
+  border-color: var(--hud-cyan);
+  box-shadow: 0 0 12px rgba(88, 166, 255, 0.25), inset 0 1px 0 var(--hud-bevel-light);
+}
+
+.dash__search-icon {
+  font-size: 14px;
+  opacity: 0.6;
+}
+
+.dash__search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--hud-text);
+  font: inherit;
+  font-size: 14px;
 }
 
 .dash__radial {
-  width: min(80vmin, 460px);
+  width: min(80vmin, 380px);
 }
 
 .dash__orbit {
   fill: none;
-  stroke: var(--hud-line);
-  stroke-dasharray: 3 6;
+  stroke: var(--hud-glass-line);
+  stroke-dasharray: 4 6;
+  stroke-width: 1;
 }
 
 .dash__orbit--inner {
   stroke-dasharray: none;
-  opacity: 0.5;
+  stroke: rgba(88, 166, 255, 0.15);
+  stroke-width: 1;
+  opacity: 0.6;
 }
 
 .dash__core {
   fill: var(--hud-text);
   font-size: 26px;
+  font-weight: 600;
   letter-spacing: 8px;
 }
 
 .dash__core-sub {
-  fill: var(--hud-text-dim);
+  fill: var(--hud-cyan);
   font-size: 10px;
   letter-spacing: 2px;
+  text-transform: uppercase;
+  opacity: 0.85;
 }
 
 .dash__node circle {
-  fill: var(--hud-surface-raised);
-  stroke: var(--hud-cyan-dim);
+  fill: var(--hud-glass-bg);
+  stroke: var(--hud-glass-line);
   stroke-width: 1;
-  transition: transform var(--hud-dur-fast) ease, opacity var(--hud-dur-fast) ease;
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+  transition:
+    transform var(--hud-dur-fast) ease,
+    opacity var(--hud-dur-fast) ease;
   transform-box: fill-box;
   transform-origin: center;
 }
@@ -49,54 +181,83 @@
 .dash__node:hover circle,
 .dash__node:focus-visible circle {
   stroke: var(--hud-cyan);
+  fill: var(--hud-surface-raised);
   transform: scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(88, 166, 255, 0.35));
 }
 
 .dash__node text {
   fill: var(--hud-text);
   font-size: 11px;
+  font-weight: 500;
 }
 
 .dash__node--future {
   cursor: default;
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 .dash__node--future circle {
-  stroke: var(--hud-line);
-  fill: var(--hud-surface);
+  stroke: rgba(255, 255, 255, 0.06);
+  fill: rgba(22, 27, 34, 0.4);
+}
+
+.dash__node--future:hover circle {
+  stroke: rgba(255, 255, 255, 0.06);
+  fill: rgba(22, 27, 34, 0.4);
+  filter: none;
+  transform: none;
 }
 
 .dash__planned {
   fill: var(--hud-amber);
   font-size: 9px;
   letter-spacing: 1px;
+  font-weight: 600;
 }
 
 .dash__stats {
-  display: flex;
-  gap: 28px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
   margin: 14px 0 0;
+  padding: 10px 12px;
+  width: 100%;
+  background: var(--hud-glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: var(--hud-radius);
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
 }
 
 .dash__stats dt {
+  grid-row: 1;
   color: var(--hud-text-dim);
-  font-size: 11px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .dash__stats dd {
-  margin: 0;
+  grid-row: 2;
+  margin: 2px 0 0;
   font-variant-numeric: tabular-nums;
   text-align: left;
 }
 
 .dash__stats .stat__value {
-  font-size: 16px;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .dash__stats dd .stat__value {
   display: inline-block;
-  max-width: 180px;
+  max-width: 110px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -107,6 +268,14 @@
   color: var(--hud-text-dim);
   font-size: 11px;
   margin-top: 12px;
+  padding: 4px 12px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: 16px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
