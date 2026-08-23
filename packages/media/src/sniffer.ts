@@ -56,6 +56,43 @@ export function isAdOrTracker(urlString: string): boolean {
   return ADS_PATTERNS.some((p) => p.test(urlString));
 }
 
+export function canonicalizeMediaUrl(rawUrl: string): { canonicalUrl: string; isSegmentChunk: boolean } {
+  try {
+    const parsed = new URL(rawUrl);
+    const host = parsed.hostname.toLowerCase();
+    let isSegmentChunk = false;
+
+    if (
+      parsed.searchParams.has("range") ||
+      parsed.searchParams.has("sq") ||
+      parsed.searchParams.has("rn") ||
+      parsed.searchParams.has("segment") ||
+      parsed.pathname.endsWith(".ts") ||
+      parsed.pathname.endsWith(".m4s")
+    ) {
+      isSegmentChunk = true;
+    }
+
+    if (host.includes("googlevideo.com") && parsed.pathname.includes("/videoplayback")) {
+      const docid = parsed.searchParams.get("id") || parsed.searchParams.get("docid");
+      const itag = parsed.searchParams.get("itag");
+      if (docid) {
+        const cleanUrl = `https://${host}/videoplayback?id=${docid}${itag ? `&itag=${itag}` : ""}`;
+        return { canonicalUrl: cleanUrl, isSegmentChunk };
+      }
+    }
+
+    parsed.searchParams.delete("range");
+    parsed.searchParams.delete("sq");
+    parsed.searchParams.delete("rn");
+    parsed.searchParams.delete("rbuf");
+
+    return { canonicalUrl: parsed.toString(), isSegmentChunk };
+  } catch {
+    return { canonicalUrl: rawUrl, isSegmentChunk: false };
+  }
+}
+
 export function sniffMediaStream(req: SniffRequest): MediaSource | null {
   const url = req.url;
   const mime = (req.mimeType ?? "").toLowerCase();
@@ -85,9 +122,10 @@ export function sniffMediaStream(req: SniffRequest): MediaSource | null {
 
   if (format === null) return null;
 
+  const { canonicalUrl } = canonicalizeMediaUrl(url);
   const isDrmProtected = detectDrm(url, req.headers);
   const isLive = lowerUrl.includes("live") || lowerUrl.includes("stream");
-  const id = `media-${Math.abs(hashString(url))}`;
+  const id = `media-${Math.abs(hashString(canonicalUrl))}`;
 
   return {
     id,

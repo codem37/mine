@@ -63,11 +63,13 @@ export class MediaEngine {
   inspectRequest(req: SniffRequest): MediaSource | null {
     const source = sniffMediaStream(req);
     if (source !== null) {
-      const resumePos = this.manager.getResumePosition(source.id);
-      const updatedSource = resumePos > 0 ? { ...source, playbackPosition: resumePos } : source;
-      this.sources.set(source.id, updatedSource);
-      this.historyStore.add(updatedSource);
-      this.notifyStreams();
+      if (!this.sources.has(source.id)) {
+        const resumePos = this.manager.getResumePosition(source.id);
+        const updatedSource = resumePos > 0 ? { ...source, playbackPosition: resumePos } : source;
+        this.sources.set(source.id, updatedSource);
+        this.historyStore.add(updatedSource);
+        this.notifyStreams();
+      }
     }
     return source;
   }
