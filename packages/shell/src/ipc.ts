@@ -3,15 +3,22 @@ import {
   IPC_CHANNELS,
   NavigateRequestSchema,
   NewTabRequestSchema,
+  ShieldStatsSchema,
   TabIdRequestSchema,
+  TabsUpdatedPayloadSchema,
   UnitRequestSchema,
 } from "@mine/contracts";
 import type { TabManager } from "./tab-manager.js";
 import { parsePayload } from "./core/ipc-parse.js";
 
+export interface IpcDeps {
+  readonly currentShieldStats: () => unknown;
+}
+
 export function registerIpcHandlers(
   manager: TabManager,
   win: Electron.BrowserWindow,
+  deps: IpcDeps,
 ): void {
   const unitHandlers: Record<string, () => void> = {
     [IPC_CHANNELS.shell.minimizeWindow]: () => win.minimize(),
@@ -83,4 +90,19 @@ export function registerIpcHandlers(
     const payload = parsePayload(TabIdRequestSchema, raw);
     return payload.ok ? manager.stop(payload.value.tabId) : payload;
   });
+
+  ipcMain.handle(IPC_CHANNELS.shell.getTabs, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return parsePayload(TabsUpdatedPayloadSchema, manager.snapshot());
+  });
+
+  ipcMain.handle(
+    IPC_CHANNELS.shield.getStats,
+    async (_event, raw: unknown) => {
+      const payload = parsePayload(UnitRequestSchema, raw);
+      if (!payload.ok) return payload;
+      return parsePayload(ShieldStatsSchema, deps.currentShieldStats());
+    },
+  );
 }

@@ -12,7 +12,6 @@ import type {
 } from "@mine/contracts";
 
 type InvokeResult = Result<unknown>;
-
 const api = {
   navigate: (payload: NavigateRequest): Promise<InvokeResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.shell.navigate, payload),
@@ -30,6 +29,10 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.shell.reload, payload),
   stop: (payload: TabIdRequest): Promise<InvokeResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.shell.stop, payload),
+  getTabs: (): Promise<Result<TabsUpdatedPayload>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shell.getTabs, {}),
+  getShieldStats: (): Promise<Result<ShieldStats>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.getStats, {}),
   onTabsUpdated: (
     callback: (payload: TabsUpdatedPayload) => void,
   ): (() => void) => {

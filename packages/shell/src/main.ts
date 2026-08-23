@@ -32,6 +32,50 @@ function emitWindowState(): void {
   mainWindow.webContents.send(IPC_EVENTS.shell.windowStateChanged, payload);
 }
 
+function currentShieldStats(origin?: { readonly webContentsId: number | null }): unknown {
+  const bridge = bridgeRef;
+  if (bridge === null || manager === null) {
+    return { tabId: null, blockedCount: 0, engineState: "uninitialised", lastError: null };
+  }
+  const tabId =
+    origin?.webContentsId == null
+      ? null
+      : manager.ownerOf(origin.webContentsId);
+  return ShieldStatsSchema.parse({
+    tabId,
+    blockedCount: bridge.counts.total,
+    engineState: bridge.engine.state,
+    lastError: bridge.engine.lastError,
+  });
+}
+
+function broadcast(channel: string, payload: unknown): void {
+  const targets: Electron.WebContents[] = [];
+  if (mainWindow !== null && !mainWindow.isDestroyed()) {
+    targets.push(mainWindow.webContents);
+  }
+  if (manager !== null) {
+    for (const tab of manager.snapshot().tabs) {
+      if (!tab.url.startsWith("mine://newtab")) continue;
+      const handle = manager.ownerHandle(tab.id);
+      if (
+        handle !== undefined &&
+        !handle.isDestroyed() &&
+        !targets.includes(handle)
+      ) {
+        targets.push(handle);
+      }
+    }
+  }
+  for (const target of targets) {
+    try {
+      target.send(channel, payload);
+    } catch {
+      // a crashed view cannot receive pushes; the next event retries
+    }
+  }
+}
+
 function bootstrap(): void {
   const bridge = createShieldBridge();
   bridgeRef = bridge;
@@ -57,9 +101,8 @@ function bootstrap(): void {
   mainWindow = win;
 
   const sendTabs = (): void => {
-    if (!win.isDestroyed() && manager !== null) {
-      win.webContents.send(IPC_EVENTS.shell.tabsUpdated, manager.snapshot());
-    }
+    if (manager === null) return;
+    broadcast(IPC_EVENTS.shell.tabsUpdated, manager.snapshot());
   };
   manager = new TabManager(win, sendTabs, history, {
     stripParams: stripTrackingParams,
@@ -67,7 +110,7 @@ function bootstrap(): void {
       new URL("./preload.cjs", import.meta.url),
     ),
   });
-  registerIpcHandlers(manager, win);
+  registerIpcHandlers(manager, win, { currentShieldStats });
 
   win.on("maximize", emitWindowState);
   win.on("unmaximize", emitWindowState);
@@ -89,17 +132,8 @@ function bootstrap(): void {
   app.on("before-quit", () => sampler.stop());
 
   bridge.setEmitter((signal) => {
-    const tabId =
-      signal.webContentsId === null
-        ? null
-        : (manager?.ownerOf(signal.webContentsId) ?? null);
     if (win.isDestroyed()) return;
-    const payload = ShieldStatsSchema.parse({
-      tabId,
-      blockedCount: bridge.counts.total,
-      engineState: bridge.engine.state,
-    });
-    win.webContents.send(IPC_EVENTS.shield.statsUpdated, payload);
+    broadcast(IPC_EVENTS.shield.statsUpdated, currentShieldStats(signal));
   });
   void bridge.start();
 
