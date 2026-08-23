@@ -1,17 +1,37 @@
 import { useEffect, useRef, useState } from "react";
-import type { TabId } from "@mine/contracts";
+import type { ShieldStats, TabId } from "@mine/contracts";
 import type { JSX } from "react";
-
-const mine = window.mine;
 
 interface Props {
   activeTabId: TabId | null;
   activeUrl: string;
+  shield: ShieldStats | null;
 }
 
-export function AddressBar({ activeTabId, activeUrl }: Props): JSX.Element {
+function ShieldGlyph(): JSX.Element {
+  return (
+    <svg
+      className="shieldtoggle__glyph"
+      viewBox="0 0 16 16"
+      width="14"
+      height="14"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 1.5 L13.5 3.5 V7.5 C13.5 11 11 13.5 8 14.8 C5 13.5 2.5 11 2.5 7.5 V3.5 Z"
+        fill="currentColor"
+        stroke="currentColor"
+        strokeWidth="1"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function AddressBar({ activeTabId, activeUrl, shield }: Props): JSX.Element {
   const [value, setValue] = useState(activeUrl);
   const focused = useRef(false);
+  const shieldOn = shield?.enabled !== false;
 
   useEffect(() => {
     if (!focused.current) setValue(activeUrl);
@@ -29,7 +49,7 @@ export function AddressBar({ activeTabId, activeUrl }: Props): JSX.Element {
         const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw)
           ? raw
           : `https://${raw}`;
-        void mine.navigate({ tabId: activeTabId, url }).then((result) => {
+        void window.mine.navigate({ tabId: activeTabId, url }).then((result) => {
           if (!result.ok) console.error(result.error.message);
         });
       }}
@@ -48,6 +68,25 @@ export function AddressBar({ activeTabId, activeUrl }: Props): JSX.Element {
         }}
         onChange={(e) => setValue(e.target.value)}
       />
+      <button
+        type="button"
+        className={
+          "addressbar__shield" + (shieldOn ? "" : " addressbar__shield--off")
+        }
+        aria-label={shieldOn ? "turn shield off" : "turn shield on"}
+        aria-pressed={shieldOn}
+        disabled={shield === null}
+        title={shieldOn ? "shield is on" : "shield is off"}
+        onClick={() => {
+          void window.mine
+            .setShieldEnabled({ enabled: !shieldOn })
+            .then((result) => {
+              if (!result.ok) console.error(result.error.message);
+            });
+        }}
+      >
+        <ShieldGlyph />
+      </button>
     </form>
   );
 }

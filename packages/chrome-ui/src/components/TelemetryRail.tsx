@@ -23,6 +23,7 @@ function rounded(value: number | null | undefined): string | null {
 export function TelemetryRail({ telemetry, shield }: Props): JSX.Element {
   const engineState: ShieldEngineState | null =
     shield?.engineState ?? null;
+  const shieldOff = shield?.enabled === false;
   return (
     <aside className="rail" aria-label="telemetry">
       <h2 className="rail__heading">telemetry</h2>
@@ -53,8 +54,14 @@ export function TelemetryRail({ telemetry, shield }: Props): JSX.Element {
         <StatNode
           label="engine"
           value={engineState}
-          tone={engineState === null ? "neutral" : ENGINE_TONE[engineState]}
-          detail={shield?.lastError ?? null}
+          tone={
+            engineState === null || shieldOff
+              ? "neutral"
+              : ENGINE_TONE[engineState]
+          }
+          detail={
+            shield?.lastError ?? (shieldOff ? "protection off" : null)
+          }
           testId="engine-state"
         />
         <StatNode

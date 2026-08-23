@@ -87,6 +87,9 @@
 .addressbar {
   flex: 1;
   min-width: 160px;
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .addressbar input {
@@ -96,12 +99,33 @@
   border-radius: var(--hud-chamfer);
   color: var(--hud-text);
   font: inherit;
-  padding: 5px 10px;
+  padding: 5px 34px 5px 10px;
 }
 
 .addressbar input:focus-visible {
   outline: none;
   border-color: var(--hud-cyan);
+}
+
+.addressbar__shield {
+  position: absolute;
+  right: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  color: var(--hud-cyan);
+  box-shadow: 0 0 6px var(--hud-cyan-dim);
+}
+
+/* Same control, different state: the glyph stays, the light goes out. */
+.addressbar__shield--off {
+  color: var(--hud-text-dim);
+  box-shadow: none;
+  opacity: 0.55;
 }
 
 .wincontrols {

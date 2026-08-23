@@ -37,6 +37,7 @@ export function App(): JSX.Element {
         <AddressBar
           activeTabId={tabsPayload.activeTabId}
           activeUrl={active?.url ?? ""}
+          shield={shield}
         />
         <WindowControls maximized={maximized} />
       </header>
