@@ -8,15 +8,13 @@ import { WindowControls } from "./components/WindowControls.js";
 import { TelemetryRail } from "./components/TelemetryRail.js";
 import { useLiveStats } from "./use-live-stats.js";
 
-const mine = window.mine;
-
 export function App(): JSX.Element {
   const { tabs: liveTabs, shield } = useLiveStats();
   const [maximized, setMaximized] = useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
 
-  useEffect(() => mine.onWindowState((state) => setMaximized(state.maximized)), []);
-  useEffect(() => mine.onTelemetry(setTelemetry), []);
+  useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
+  useEffect(() => window.mine.onTelemetry(setTelemetry), []);
 
   const tabsPayload = liveTabs ?? { tabs: [], activeTabId: null };
   const active =
@@ -29,10 +27,6 @@ export function App(): JSX.Element {
           MINE
         </div>
         <div className="drag-strip" />
-        <TabStrip
-          tabs={tabsPayload.tabs}
-          activeTabId={tabsPayload.activeTabId}
-        />
         <NavControls active={active} />
         <AddressBar
           activeTabId={tabsPayload.activeTabId}
@@ -41,7 +35,16 @@ export function App(): JSX.Element {
         />
         <WindowControls maximized={maximized} />
       </header>
-      <TelemetryRail telemetry={telemetry} shield={shield} />
+      <aside className="rail" aria-label="browser rail">
+        <section className="rail__section" aria-label="open tabs">
+          <h2 className="rail__heading">tabs</h2>
+          <TabStrip
+            tabs={tabsPayload.tabs}
+            activeTabId={tabsPayload.activeTabId}
+          />
+        </section>
+        <TelemetryRail telemetry={telemetry} shield={shield} />
+      </aside>
     </div>
   );
 }

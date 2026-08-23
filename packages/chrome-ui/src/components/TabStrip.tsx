@@ -1,7 +1,7 @@
 import type { TabSnapshot, TabId } from "@mine/contracts";
 import type { JSX } from "react";
 
-const mine = window.mine;
+const LOADING_STATES = new Set(["started", "committed", "dom-ready"]);
 
 interface Props {
   tabs: readonly TabSnapshot[];
@@ -9,28 +9,28 @@ interface Props {
 }
 
 export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
-  const activeIndex = tabs.findIndex((t) => t.id === activeTabId);
-
   return (
     <div className="tabstrip" role="tablist" aria-label="open tabs">
-      {tabs.map((tab, index) => {
-        const offset = index - (activeIndex === -1 ? 0 : activeIndex);
-        const angle = Math.max(-6, Math.min(6, offset * 1.5));
-        const drop = Math.abs(offset) * 1.5;
+      {tabs.map((tab) => {
+        const loading = LOADING_STATES.has(tab.loadState);
         return (
           <button
             key={tab.id}
             role="tab"
             aria-selected={tab.id === activeTabId}
             className={
-              "tab" + (tab.id === activeTabId ? " tab--active" : "")
+              "tab" +
+              (tab.id === activeTabId ? " tab--active" : "") +
+              (loading ? " tab--loading" : "")
             }
-            style={{
-              transform: `rotate(${angle}deg) translateY(${drop}px)`,
-            }}
             title={tab.title || tab.url}
-            onClick={() => void mine.activateTab({ tabId: tab.id })}
+            onClick={() => void window.mine.activateTab({ tabId: tab.id })}
           >
+            <span
+              className="tab__state"
+              aria-hidden="true"
+              data-state={loading ? "loading" : "idle"}
+            />
             <span className="tab__title">{tab.title || tab.url}</span>
             <span
               className="tab__close"
@@ -38,7 +38,7 @@ export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
               aria-label={`close ${tab.title || tab.url}`}
               onClick={(e) => {
                 e.stopPropagation();
-                void mine.closeTab({ tabId: tab.id });
+                void window.mine.closeTab({ tabId: tab.id });
               }}
             >
               ×
@@ -47,9 +47,9 @@ export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
         );
       })}
       <button
-        className="tabstrip__new"
+        className="tabstrip__new tile"
         aria-label="new tab"
-        onClick={() => void mine.newTab()}
+        onClick={() => void window.mine.newTab()}
       >
         +
       </button>

@@ -36,27 +36,46 @@
 
 .tabstrip {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 4px;
-  max-width: 46vw;
-  overflow: hidden;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .tab {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  max-width: 150px;
+  max-width: 100%;
   padding: 4px 8px;
   background: var(--hud-bg);
   border-color: var(--hud-line);
-  border-radius: var(--hud-radius) var(--hud-radius) 0 0;
   opacity: 0.85;
 }
 
 .tab--active {
   background: var(--hud-surface-raised);
   border-color: var(--hud-cyan-dim);
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+.tab__state {
+  flex: 0 0 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--hud-text-dim);
+  opacity: 0.4;
+}
+
+.tab--loading .tab__state {
+  background: var(--hud-amber);
+  opacity: 1;
+}
+
+.tab--active .tab__state {
+  background: var(--hud-cyan);
   opacity: 1;
 }
 
@@ -151,10 +170,19 @@
   right: 0;
   bottom: 0;
   width: var(--hud-rail-width);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
   padding: 10px;
   background: var(--hud-surface);
   border-left: var(--hud-stroke) solid var(--hud-line);
   overflow-y: auto;
+}
+
+.rail__section {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
 }
 
 .rail__heading {

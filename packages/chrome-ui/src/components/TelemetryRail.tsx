@@ -25,52 +25,57 @@ export function TelemetryRail({ telemetry, shield }: Props): JSX.Element {
     shield?.engineState ?? null;
   const shieldOff = shield?.enabled === false;
   return (
-    <aside className="rail" aria-label="telemetry">
-      <h2 className="rail__heading">telemetry</h2>
-      <dl className="rail__grid">
-        <StatNode
-          label="cpu"
-          value={rounded(telemetry?.cpuPercent)}
-          unit="%"
-          testId="cpu"
-        />
-        <StatNode label="ram" value={rounded(telemetry?.ramMb)} unit=" MB" />
-        <StatNode
-          label="net/min"
-          value={telemetry === null ? null : String(telemetry.netRequestsPerMinute)}
-          testId="net"
-        />
-        <StatNode
-          label="gpu"
-          value={null}
-          detail={
-            telemetry === null ? null : "gpu sampling not built yet"
-          }
-        />
-      </dl>
+    <>
+      <section className="rail__section" aria-label="telemetry">
+        <h2 className="rail__heading">telemetry</h2>
+        <dl className="rail__grid">
+          <StatNode
+            label="cpu"
+            value={rounded(telemetry?.cpuPercent)}
+            unit="%"
+            testId="cpu"
+          />
+          <StatNode label="ram" value={rounded(telemetry?.ramMb)} unit=" MB" />
+          <StatNode
+            label="net/min"
+            value={telemetry === null ? null : String(telemetry.netRequestsPerMinute)}
+            testId="net"
+          />
+          <StatNode
+            label="gpu"
+            value={null}
+            detail={
+              telemetry === null ? null : "gpu sampling not built yet"
+            }
+          />
+        </dl>
+      </section>
 
-      <h2 className="rail__heading">shield</h2>
-      <dl className="rail__grid">
-        <StatNode
-          label="engine"
-          value={engineState}
-          tone={
-            engineState === null || shieldOff
-              ? "neutral"
-              : ENGINE_TONE[engineState]
-          }
-          detail={
-            shield?.lastError ?? (shieldOff ? "protection off" : null)
-          }
-          testId="engine-state"
-        />
-        <StatNode
-          label="blocked"
-          value={shield === null ? null : String(shield.blockedCount)}
-          size="large"
-          testId="blocked"
-        />
-      </dl>
-    </aside>
+      <section className="rail__section rail__card" aria-label="shield status">
+        <h2 className="rail__heading">shield</h2>
+        <dl className="rail__grid">
+          <StatNode
+            label="engine"
+            value={engineState}
+            tone={
+              engineState === null || shieldOff
+                ? "neutral"
+                : ENGINE_TONE[engineState]
+            }
+            detail={
+              shield?.lastError ?? (shieldOff ? "protection off" : null)
+            }
+            testId="engine-state"
+          />
+          <StatNode
+            label="blocked"
+            value={shield === null ? null : String(shield.blockedCount)}
+            size="large"
+            tone={shieldOff ? "neutral" : "ok"}
+            testId="blocked"
+          />
+        </dl>
+      </section>
+    </>
   );
 }
