@@ -46,9 +46,13 @@ export interface MineBridge {
   deleteFile(payload: import("@mine/contracts").DeleteFileRequest): Promise<InvokeResult>;
   getStorageInfo(): Promise<Result<import("@mine/contracts").StorageInfo>>;
   onDownloadsUpdated(cb: (payload: DownloadsUpdatedPayload) => void): () => void;
-  getDetectedStreams(): Promise<Result<readonly import("@mine/contracts").MediaStream[]>>;
+  getDetectedStreams(): Promise<Result<readonly import("@mine/contracts").MediaSource[]>>;
   playNativeMedia(payload: import("@mine/contracts").PlayNativeRequest): Promise<InvokeResult>;
-  onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaStream[]) => void): () => void;
+  getMediaState(): Promise<Result<import("@mine/contracts").PlayerState>>;
+  controlMedia(payload: import("@mine/contracts").MediaControlRequest): Promise<InvokeResult>;
+  downloadMediaSource(payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult>;
+  onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaSource[]) => void): () => void;
+  onPlayerStateChanged(cb: (payload: import("@mine/contracts").PlayerState) => void): () => void;
   search(payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>>;
 }
 

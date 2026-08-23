@@ -4,6 +4,9 @@ import {
   DeleteFileRequestSchema,
   DownloadIdRequestSchema,
   IPC_CHANNELS,
+  LoadSubtitleRequestSchema,
+  MediaControlRequestSchema,
+  MediaItemDownloadRequestSchema,
   NavigateRequestSchema,
   NewTabRequestSchema,
   PlayNativeRequestSchema,
@@ -24,6 +27,8 @@ export interface IpcDeps {
   readonly onDownloadAction?: (action: string, param1: string, param2?: unknown) => void;
   readonly currentMediaStreams?: () => unknown[];
   readonly onMediaAction?: (action: string, param1: string, param2?: unknown) => void;
+  readonly getMediaState?: () => unknown;
+  readonly onMediaControl?: (action: string, value?: unknown) => void;
   readonly onSearchQuery?: (query: string, category?: string, page?: number) => Promise<unknown>;
 }
 
@@ -209,6 +214,27 @@ export function registerIpcHandlers(
     const payload = parsePayload(PlayNativeRequestSchema, raw);
     if (!payload.ok) return payload;
     deps.onMediaAction?.("playNative", payload.value.url, payload.value.title);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.getState, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getMediaState?.() ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.control, async (_event, raw: unknown) => {
+    const payload = parsePayload(MediaControlRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onMediaControl?.(payload.value.action, payload.value.value);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.downloadSource, async (_event, raw: unknown) => {
+    const payload = parsePayload(MediaItemDownloadRequestSchema, raw);
+    if (!payload.ok) return payload;
+    // Direct handoff to Phase 4 Fetcher
+    deps.onDownloadAction?.("add", payload.value.url, payload.value.title);
     return { ok: true, value: null } as const;
   });
 

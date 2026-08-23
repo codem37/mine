@@ -158,26 +158,111 @@ export const DownloadsUpdatedPayloadSchema = z.array(DownloadItemSchema);
 export type DownloadsUpdatedPayload = readonly DownloadItem[];
 
 import { MEDIA_FORMATS } from "../types/media.js";
-import type { MediaFormat, MediaStream as MineMediaStream, PlayNativeRequest } from "../types/media.js";
+import type {
+  MediaFormat,
+  MediaSource as MineMediaSource,
+  PlayerState as MinePlayerState,
+  PlayNativeRequest,
+  MediaControlRequest,
+  LoadSubtitleRequest,
+  MediaItemDownloadRequest,
+} from "../types/media.js";
 export { MEDIA_FORMATS } from "../types/media.js";
-export type { MediaFormat, MediaStream, PlayNativeRequest } from "../types/media.js";
+export type {
+  MediaFormat,
+  MediaSource,
+  PlayerState,
+  PlayNativeRequest,
+  MediaControlRequest,
+  LoadSubtitleRequest,
+  MediaItemDownloadRequest,
+} from "../types/media.js";
 
 export const MediaFormatSchema = z.enum(MEDIA_FORMATS);
 
-export const MediaStreamSchema: z.ZodType<MineMediaStream> = z.object({
+export const MediaQualitySchema = z.object({
+  label: z.string().min(1),
+  bitrateBps: z.number().optional(),
+  width: z.number().optional(),
+  height: z.number().optional(),
+});
+
+export const MediaTrackSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  language: z.string().optional(),
+  isDefault: z.boolean().optional(),
+});
+
+export const MediaSourceSchema: z.ZodType<MineMediaSource> = z.object({
   id: z.string().min(1),
   url: z.string().min(1),
   mimeType: z.string().min(1),
   format: MediaFormatSchema,
   title: z.string().optional(),
   isDrmProtected: z.boolean(),
+  isLive: z.boolean(),
   durationSeconds: z.number().min(0).nullable().optional(),
+  qualities: z.array(MediaQualitySchema),
+  audioTracks: z.array(MediaTrackSchema),
+  subtitleTracks: z.array(MediaTrackSchema),
+  playbackPosition: z.number().optional(),
+  thumbnailUrl: z.string().optional(),
+});
+
+export const PlaybackDiagnosticsSchema = z.object({
+  decoder: z.string(),
+  renderer: z.string(),
+  droppedFrames: z.number(),
+  renderedFrames: z.number(),
+  hwDecoding: z.boolean(),
+  audioVideoSyncMs: z.number(),
+});
+
+export const PlayerStateSchema: z.ZodType<MinePlayerState> = z.object({
+  sourceId: z.string().nullable(),
+  status: z.enum(["idle", "buffering", "playing", "paused", "ended", "error"]),
+  currentTime: z.number(),
+  duration: z.number(),
+  bufferedSeconds: z.number(),
+  volume: z.number(),
+  muted: z.boolean(),
+  playbackRate: z.number(),
+  activeQuality: z.string(),
+  activeAudioTrack: z.string().nullable(),
+  activeSubtitleTrack: z.string().nullable(),
+  subtitleOffsetSeconds: z.number(),
+  audioOffsetSeconds: z.number(),
+  loopState: z.enum(["off", "single", "range"]),
+  loopRange: z.tuple([z.number(), z.number()]).nullable(),
+  currentFrame: z.number(),
+  frameFps: z.number(),
+  fullscreen: z.boolean(),
+  diagnostics: PlaybackDiagnosticsSchema,
 });
 
 export const PlayNativeRequestSchema: z.ZodType<PlayNativeRequest> = z.object({
   streamId: z.string().min(1),
   url: z.string().min(1),
   title: z.string().optional(),
+});
+
+export const MediaControlRequestSchema: z.ZodType<MediaControlRequest> = z.object({
+  action: z.enum(["play", "pause", "seek", "setVolume", "setMute", "setSpeed", "setQuality", "setSubtitle", "setAudioTrack", "setABLoop", "stepFrame", "setSubtitleOffset", "setAudioOffset"]),
+  value: z.any().optional(),
+});
+
+export const LoadSubtitleRequestSchema: z.ZodType<LoadSubtitleRequest> = z.object({
+  filePath: z.string().min(1),
+  label: z.string().optional(),
+});
+
+export const MediaItemDownloadRequestSchema: z.ZodType<MediaItemDownloadRequest> = z.object({
+  sourceId: z.string().min(1),
+  url: z.string().min(1),
+  title: z.string().min(1),
+  quality: z.string().optional(),
+  format: MediaFormatSchema.optional(),
 });
 
 export type { SearchRequest, SearchResponse, SearchResult, SearchFacet } from "../types/search.js";

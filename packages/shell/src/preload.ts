@@ -113,17 +113,32 @@ const api = {
       ipcRenderer.removeListener(IPC_EVENTS.fetcher.downloadsUpdated, listener);
     };
   },
-  getDetectedStreams: (): Promise<Result<readonly import("@mine/contracts").MediaStream[]>> =>
+  getDetectedStreams: (): Promise<Result<readonly import("@mine/contracts").MediaSource[]>> =>
     ipcRenderer.invoke(IPC_CHANNELS.media.getDetectedStreams, {}),
   playNativeMedia: (payload: import("@mine/contracts").PlayNativeRequest): Promise<InvokeResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.media.playNative, payload),
-  onStreamDetected: (callback: (payload: readonly import("@mine/contracts").MediaStream[]) => void): (() => void) => {
-    const listener = (_event: unknown, payload: readonly import("@mine/contracts").MediaStream[]): void => {
+  getMediaState: (): Promise<Result<import("@mine/contracts").PlayerState>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.getState, {}),
+  controlMedia: (payload: import("@mine/contracts").MediaControlRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.control, payload),
+  downloadMediaSource: (payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.downloadSource, payload),
+  onStreamDetected: (callback: (payload: readonly import("@mine/contracts").MediaSource[]) => void): (() => void) => {
+    const listener = (_event: unknown, payload: readonly import("@mine/contracts").MediaSource[]): void => {
       callback(payload);
     };
     ipcRenderer.on(IPC_EVENTS.media.streamDetected, listener);
     return () => {
       ipcRenderer.removeListener(IPC_EVENTS.media.streamDetected, listener);
+    };
+  },
+  onPlayerStateChanged: (callback: (payload: import("@mine/contracts").PlayerState) => void): (() => void) => {
+    const listener = (_event: unknown, payload: import("@mine/contracts").PlayerState): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.media.playerStateChanged, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.media.playerStateChanged, listener);
     };
   },
   search: (payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>> =>

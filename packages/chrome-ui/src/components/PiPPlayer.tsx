@@ -1,9 +1,9 @@
 import { useState, useRef } from "react";
-import type { MediaStream } from "@mine/contracts";
+import type { MediaSource } from "@mine/contracts";
 import type { JSX } from "react";
 
 interface Props {
-  readonly streams: readonly MediaStream[];
+  readonly streams: readonly MediaSource[];
   readonly onClose: () => void;
 }
 

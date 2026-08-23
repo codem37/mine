@@ -1,53 +1,67 @@
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
-import type { MediaStream } from "@mine/contracts";
+import type { MediaSource } from "@mine/contracts";
 import { MediaIndicator } from "./MediaIndicator.js";
-import { PiPPlayer } from "./PiPPlayer.js";
+import { MediaActionBubble } from "./MediaActionBubble.js";
+import { CinematicPlayer } from "./CinematicPlayer.js";
 
-function makeStream(overrides: Partial<MediaStream> = {}): MediaStream {
+function makeSource(overrides: Partial<MediaSource> = {}): MediaSource {
   return {
-    id: "stream-1",
+    id: "media-1",
     url: "https://example.com/playlist.m3u8",
     mimeType: "application/x-mpegurl",
     format: "hls",
     title: "Sample Live HLS Stream",
     isDrmProtected: false,
+    isLive: true,
+    qualities: [{ label: "Auto" }, { label: "1080p" }],
+    audioTracks: [{ id: "a1", label: "English" }],
+    subtitleTracks: [{ id: "s1", label: "English" }],
     ...overrides,
   };
 }
 
 describe("MediaIndicator component", () => {
-  it("renders null when streams array is empty", () => {
-    const html = renderToStaticMarkup(<MediaIndicator streams={[]} onOpenPiP={() => {}} />);
+  it("renders null when sources array is empty", () => {
+    const html = renderToStaticMarkup(<MediaIndicator sources={[]} onOpenBubble={() => {}} />);
     expect(html).toBe("");
   });
 
-  it("renders media count badge when stream is detected", () => {
-    const stream = makeStream();
-    const html = renderToStaticMarkup(<MediaIndicator streams={[stream]} onOpenPiP={() => {}} />);
-    expect(html).toContain("🎬 1");
-  });
-
-  it("renders lock icon badge when stream is DRM protected", () => {
-    const stream = makeStream({ isDrmProtected: true });
-    const html = renderToStaticMarkup(<MediaIndicator streams={[stream]} onOpenPiP={() => {}} />);
-    expect(html).toContain("🔒");
+  it("renders media count badge when sources are detected", () => {
+    const s1 = makeSource();
+    const s2 = makeSource({ id: "media-2", title: "Second Stream" });
+    const html = renderToStaticMarkup(<MediaIndicator sources={[s1, s2]} onOpenBubble={() => {}} />);
+    expect(html).toContain("2");
   });
 });
 
-describe("PiPPlayer component", () => {
-  it("renders player overlay with controls and title", () => {
-    const stream = makeStream();
-    const html = renderToStaticMarkup(<PiPPlayer streams={[stream]} onClose={() => {}} />);
-    expect(html).toContain("Sample Live HLS Stream");
-    expect(html).toContain("▶ Play");
-    expect(html).toContain("▶ Handoff to Native Player (MPV)");
+describe("MediaActionBubble component", () => {
+  it("renders vertical capsule options for playing, opening in player, and downloading", () => {
+    const s1 = makeSource();
+    const html = renderToStaticMarkup(<MediaActionBubble sources={[s1]} onClose={() => {}} onOpenPlayer={() => {}} />);
+    expect(html).toContain("Play in Native Player");
+    expect(html).toContain("Download via Fetcher");
   });
 
-  it("renders DRM warning badge for DRM protected streams", () => {
-    const stream = makeStream({ isDrmProtected: true });
-    const html = renderToStaticMarkup(<PiPPlayer streams={[stream]} onClose={() => {}} />);
-    expect(html).toContain("🔒 DRM Protected Stream");
-    expect(html).not.toContain("Handoff to Native Player");
+  it("displays DRM notice for protected media", () => {
+    const s1 = makeSource({ isDrmProtected: true });
+    const html = renderToStaticMarkup(<MediaActionBubble sources={[s1]} onClose={() => {}} onOpenPlayer={() => {}} />);
+    expect(html).toContain("🔒 DRM Protected Media");
+  });
+});
+
+describe("CinematicPlayer component", () => {
+  it("renders cinematic header, timeline, and controls", () => {
+    const s1 = makeSource();
+    const html = renderToStaticMarkup(<CinematicPlayer source={s1} onClose={() => {}} />);
+    expect(html).toContain("Sample Live HLS Stream");
+    expect(html).toContain("A-B Loop");
+    expect(html).toContain("↓ Download");
+  });
+
+  it("renders resume prompt when playbackPosition is set", () => {
+    const s1 = makeSource({ playbackPosition: 120 });
+    const html = renderToStaticMarkup(<CinematicPlayer source={s1} onClose={() => {}} />);
+    expect(html).toContain("Resume from 02:00?");
   });
 });

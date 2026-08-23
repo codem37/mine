@@ -126,8 +126,11 @@ function bootstrap(): void {
   });
 
   const mediaEngine = new MediaEngine();
-  mediaEngine.on((streams) => {
-    broadcast(IPC_EVENTS.media.streamDetected, streams);
+  mediaEngine.onStreamDetected((sources) => {
+    broadcast(IPC_EVENTS.media.streamDetected, sources);
+  });
+  mediaEngine.onPlayerStateChanged((state) => {
+    broadcast(IPC_EVENTS.media.playerStateChanged, state);
   });
 
   const searchEngine = new SearchEngine();
@@ -172,12 +175,14 @@ function bootstrap(): void {
         if (item?.savePath) shell.showItemInFolder(item.savePath);
       }
     },
-    currentMediaStreams: () => mediaEngine.getStreams(),
+    currentMediaStreams: () => mediaEngine.getSources(),
     onMediaAction: (action: string, param1: string, param2?: unknown) => {
       if (action === "playNative") {
         mediaEngine.playNative(param1, { title: typeof param2 === "string" ? param2 : undefined });
       }
     },
+    getMediaState: () => mediaEngine.getPlayerState(),
+    onMediaControl: (action: string, value?: unknown) => mediaEngine.controlPlayer(action, value),
     onSearchQuery: (query: string, category?: string, page?: number) =>
       searchEngine.search({ query, category, page }),
   });

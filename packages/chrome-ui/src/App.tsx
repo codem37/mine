@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DownloadItem, MediaStream, Telemetry } from "@mine/contracts";
+import type { DownloadItem, MediaSource, PlayerState, Telemetry } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
@@ -11,7 +11,8 @@ import { MainMenu } from "./components/MainMenu.js";
 import { DownloadSystem } from "./components/DownloadSystem.js";
 import { FetcherPage } from "./components/FetcherPage.js";
 import { MediaIndicator } from "./components/MediaIndicator.js";
-import { PiPPlayer } from "./components/PiPPlayer.js";
+import { MediaActionBubble } from "./components/MediaActionBubble.js";
+import { CinematicPlayer } from "./components/CinematicPlayer.js";
 import { useLiveStats } from "./use-live-stats.js";
 
 export function App(): JSX.Element {
@@ -19,11 +20,13 @@ export function App(): JSX.Element {
   const [maximized, setMaximized] = useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [downloads, setDownloads] = useState<readonly DownloadItem[]>([]);
-  const [mediaStreams, setMediaStreams] = useState<readonly MediaStream[]>([]);
+  const [mediaSources, setMediaSources] = useState<readonly MediaSource[]>([]);
+  const [playerState, setPlayerState] = useState<PlayerState | null>(null);
   const [siteInfoOpen, setSiteInfoOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [fullFetcherOpen, setFullFetcherOpen] = useState(false);
-  const [pipOpen, setPipOpen] = useState(false);
+  const [bubbleOpen, setBubbleOpen] = useState(false);
+  const [activePlayerSource, setActivePlayerSource] = useState<MediaSource | null>(null);
 
   useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
   useEffect(() => window.mine.onTelemetry(setTelemetry), []);
@@ -53,12 +56,28 @@ export function App(): JSX.Element {
     let active = true;
     if (window.mine.getDetectedStreams) {
       void window.mine.getDetectedStreams().then((res) => {
-        if (active && res.ok) setMediaStreams(res.value);
+        if (active && res.ok) setMediaSources(res.value);
       });
     }
     if (window.mine.onStreamDetected) {
-      const off = window.mine.onStreamDetected((streams) => {
-        if (active) setMediaStreams(streams);
+      const off = window.mine.onStreamDetected((sources) => {
+        if (active) setMediaSources(sources);
+      });
+      return () => {
+        active = false;
+        off();
+      };
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (window.mine.onPlayerStateChanged) {
+      const off = window.mine.onPlayerStateChanged((st) => {
+        if (active) setPlayerState(st);
       });
       return () => {
         active = false;
@@ -75,6 +94,15 @@ export function App(): JSX.Element {
     tabsPayload.tabs.find((t) => t.id === tabsPayload.activeTabId) ?? null;
 
   const isFetcherUrl = active?.url === "mine://fetcher/" || active?.url === "mine://downloads/";
+
+  if (activePlayerSource) {
+    return (
+      <CinematicPlayer
+        source={activePlayerSource}
+        onClose={() => setActivePlayerSource(null)}
+      />
+    );
+  }
 
   if (fullFetcherOpen || isFetcherUrl) {
     return (
@@ -98,8 +126,9 @@ export function App(): JSX.Element {
         />
 
         <MediaIndicator
-          streams={mediaStreams}
-          onOpenPiP={() => setPipOpen(true)}
+          sources={mediaSources}
+          isPlaying={playerState?.status === "playing"}
+          onOpenBubble={() => setBubbleOpen(true)}
         />
 
         <NetworkSpeedIndicator
@@ -141,10 +170,11 @@ export function App(): JSX.Element {
         />
       ) : null}
 
-      {pipOpen ? (
-        <PiPPlayer
-          streams={mediaStreams}
-          onClose={() => setPipOpen(false)}
+      {bubbleOpen ? (
+        <MediaActionBubble
+          sources={mediaSources}
+          onClose={() => setBubbleOpen(false)}
+          onOpenPlayer={(src) => setActivePlayerSource(src)}
         />
       ) : null}
 

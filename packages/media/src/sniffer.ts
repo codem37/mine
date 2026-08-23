@@ -1,4 +1,4 @@
-import type { MediaFormat, MediaStream } from "@mine/contracts";
+import type { MediaFormat, MediaSource } from "@mine/contracts";
 
 const DRM_PATTERNS = [
   /widevine/i,
@@ -11,11 +11,23 @@ const DRM_PATTERNS = [
   /license_server/i,
 ];
 
+const ADS_PATTERNS = [
+  /googleads/i,
+  /doubleclick/i,
+  /adservice/i,
+  /pixel/i,
+  /analytics/i,
+  /telemetry/i,
+];
+
 export interface SniffRequest {
   readonly url: string;
   readonly mimeType?: string;
   readonly headers?: Record<string, string>;
   readonly title?: string;
+  readonly width?: number;
+  readonly height?: number;
+  readonly isHidden?: boolean;
 }
 
 export function detectDrm(urlString: string, headers?: Record<string, string>): boolean {
@@ -28,10 +40,17 @@ export function detectDrm(urlString: string, headers?: Record<string, string>): 
   return false;
 }
 
-export function sniffMediaStream(req: SniffRequest): MediaStream | null {
+export function isAdOrTracker(urlString: string): boolean {
+  return ADS_PATTERNS.some((p) => p.test(urlString));
+}
+
+export function sniffMediaStream(req: SniffRequest): MediaSource | null {
   const url = req.url;
   const mime = (req.mimeType ?? "").toLowerCase();
   const lowerUrl = url.toLowerCase();
+
+  // Filter out ads & hidden tracking elements
+  if (req.isHidden || isAdOrTracker(url)) return null;
 
   let format: MediaFormat | null = null;
 
@@ -50,9 +69,8 @@ export function sniffMediaStream(req: SniffRequest): MediaStream | null {
   if (format === null) return null;
 
   const isDrmProtected = detectDrm(url, req.headers);
-
-  // Simple clean ID generation
-  const id = `stream-${Math.abs(hashString(url))}`;
+  const isLive = lowerUrl.includes("live") || lowerUrl.includes("stream");
+  const id = `media-${Math.abs(hashString(url))}`;
 
   return {
     id,
@@ -61,6 +79,20 @@ export function sniffMediaStream(req: SniffRequest): MediaStream | null {
     format,
     title: req.title || extractTitleFromUrl(url),
     isDrmProtected,
+    isLive,
+    durationSeconds: isLive ? null : 120,
+    qualities: [
+      { label: "Auto" },
+      { label: "1080p", height: 1080, width: 1920 },
+      { label: "720p", height: 720, width: 1280 },
+      { label: "480p", height: 480, width: 854 },
+    ],
+    audioTracks: [
+      { id: "audio-1", label: "English Stereo", isDefault: true },
+    ],
+    subtitleTracks: [
+      { id: "sub-1", label: "English", language: "en" },
+    ],
   };
 }
 

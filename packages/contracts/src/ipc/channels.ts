@@ -33,6 +33,12 @@ export const IPC_CHANNELS = {
   media: {
     playNative: "mine:media:play-native",
     getDetectedStreams: "mine:media:get-detected-streams",
+    getState: "mine:media:get-state",
+    control: "mine:media:control",
+    selectSource: "mine:media:select-source",
+    downloadSource: "mine:media:download-source",
+    loadSubtitle: "mine:media:load-subtitle",
+    getDiagnostics: "mine:media:get-diagnostics",
   },
   search: {
     query: "mine:search:query",
@@ -53,6 +59,7 @@ export const IPC_EVENTS = {
   },
   media: {
     streamDetected: "mine:media:stream-detected",
+    playerStateChanged: "mine:media:player-state-changed",
   },
 } as const;
 

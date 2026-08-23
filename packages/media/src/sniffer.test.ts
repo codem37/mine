@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { sniffMediaStream, detectDrm } from "./sniffer.js";
+import { sniffMediaStream, detectDrm, isAdOrTracker } from "./sniffer.js";
 
 describe("MediaSniffer", () => {
   it("detects HLS stream (.m3u8)", () => {
@@ -19,6 +19,12 @@ describe("MediaSniffer", () => {
     const stream = sniffMediaStream({ url: "https://example.com/clip.mp4", mimeType: "video/mp4" });
     expect(stream).not.toBeNull();
     expect(stream?.format).toBe("direct");
+  });
+
+  it("filters out ads and hidden tracking elements", () => {
+    expect(isAdOrTracker("https://googleads.g.doubleclick.net/ad.mp4")).toBe(true);
+    const hiddenAd = sniffMediaStream({ url: "https://googleads.com/ad.mp4", isHidden: true });
+    expect(hiddenAd).toBeNull();
   });
 
   it("detects Widevine DRM protection and flags stream as DRM protected", () => {

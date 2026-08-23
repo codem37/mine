@@ -1,24 +1,27 @@
-import type { MediaStream } from "@mine/contracts";
+import type { MediaSource } from "@mine/contracts";
 import type { JSX } from "react";
 
 interface Props {
-  readonly streams: readonly MediaStream[];
-  readonly onOpenPiP: () => void;
+  readonly sources: readonly MediaSource[];
+  readonly onOpenBubble: () => void;
+  readonly isPlaying?: boolean;
 }
 
-export function MediaIndicator({ streams, onOpenPiP }: Props): JSX.Element | null {
-  if (streams.length === 0) return null;
+export function MediaIndicator({ sources, onOpenBubble, isPlaying }: Props): JSX.Element | null {
+  if (sources.length === 0) return null;
 
-  const hasDrm = streams.some((s) => s.isDrmProtected);
+  const count = sources.length;
 
   return (
     <button
       type="button"
-      className="glass-btn glass-btn--sm glass-btn--primary media-indicator-btn"
-      title={hasDrm ? "Media stream detected (DRM Protected)" : `${streams.length} media stream(s) detected`}
-      onClick={onOpenPiP}
+      className={`glass-btn glass-btn--sm media-indicator-btn ${isPlaying ? "media-indicator-btn--playing" : ""}`}
+      title={count > 1 ? `${count} media items available` : "Media available"}
+      onClick={onOpenBubble}
+      data-testid="media-indicator"
     >
-      🎬 {streams.length} {hasDrm ? "🔒" : ""}
+      <span className="media-indicator__icon">◉</span>
+      {count > 1 ? <span className="media-indicator__count">{count}</span> : null}
     </button>
   );
 }
