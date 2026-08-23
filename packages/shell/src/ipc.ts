@@ -6,6 +6,7 @@ import {
   IPC_CHANNELS,
   NavigateRequestSchema,
   NewTabRequestSchema,
+  PlayNativeRequestSchema,
   SetShieldEnabledRequestSchema,
   ShieldStatsSchema,
   TabIdRequestSchema,
@@ -20,6 +21,8 @@ export interface IpcDeps {
   readonly setShieldEnabled: (enabled: boolean) => void;
   readonly currentDownloads?: () => unknown[];
   readonly onDownloadAction?: (action: string, param1: string, param2?: unknown) => void;
+  readonly currentMediaStreams?: () => unknown[];
+  readonly onMediaAction?: (action: string, param1: string, param2?: unknown) => void;
 }
 
 export function registerIpcHandlers(
@@ -190,6 +193,20 @@ export function registerIpcHandlers(
     const payload = parsePayload(DownloadIdRequestSchema, raw);
     if (!payload.ok) return payload;
     deps.onDownloadAction?.("showInFolder", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  // Media Handlers
+  ipcMain.handle(IPC_CHANNELS.media.getDetectedStreams, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.currentMediaStreams?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.playNative, async (_event, raw: unknown) => {
+    const payload = parsePayload(PlayNativeRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onMediaAction?.("playNative", payload.value.url, payload.value.title);
     return { ok: true, value: null } as const;
   });
 }

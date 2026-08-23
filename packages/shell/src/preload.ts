@@ -113,6 +113,19 @@ const api = {
       ipcRenderer.removeListener(IPC_EVENTS.fetcher.downloadsUpdated, listener);
     };
   },
+  getDetectedStreams: (): Promise<Result<readonly import("@mine/contracts").MediaStream[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.getDetectedStreams, {}),
+  playNativeMedia: (payload: import("@mine/contracts").PlayNativeRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.playNative, payload),
+  onStreamDetected: (callback: (payload: readonly import("@mine/contracts").MediaStream[]) => void): (() => void) => {
+    const listener = (_event: unknown, payload: readonly import("@mine/contracts").MediaStream[]): void => {
+      callback(payload);
+    };
+    ipcRenderer.on(IPC_EVENTS.media.streamDetected, listener);
+    return () => {
+      ipcRenderer.removeListener(IPC_EVENTS.media.streamDetected, listener);
+    };
+  },
 };
 
 export type MineBridge = typeof api;

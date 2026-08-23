@@ -30,6 +30,10 @@ export const IPC_CHANNELS = {
     deleteFile: "mine:fetcher:delete-file",
     getStorageInfo: "mine:fetcher:get-storage-info",
   },
+  media: {
+    playNative: "mine:media:play-native",
+    getDetectedStreams: "mine:media:get-detected-streams",
+  },
 } as const;
 
 export const IPC_EVENTS = {
@@ -43,6 +47,9 @@ export const IPC_EVENTS = {
   },
   fetcher: {
     downloadsUpdated: "mine:fetcher:downloads-updated",
+  },
+  media: {
+    streamDetected: "mine:media:stream-detected",
   },
 } as const;
 

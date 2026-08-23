@@ -6,6 +6,7 @@ import { IPC_EVENTS } from "@mine/contracts";
 import { ShieldStatsSchema, WindowStateSchema } from "@mine/contracts";
 import { stripTrackingParams } from "@mine/shield";
 import { DownloadEngine } from "@mine/fetcher";
+import { MediaEngine } from "@mine/media";
 import { TabManager } from "./tab-manager.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
@@ -123,6 +124,16 @@ function bootstrap(): void {
     broadcast(IPC_EVENTS.fetcher.downloadsUpdated, downloads);
   });
 
+  const mediaEngine = new MediaEngine();
+  mediaEngine.on((streams) => {
+    broadcast(IPC_EVENTS.media.streamDetected, streams);
+  });
+
+  defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
+    mediaEngine.inspectRequest({ url: details.url });
+    callback({});
+  });
+
   defaultSession().on("will-download", (_event, item) => {
     const url = item.getURL();
     const filename = item.getFilename();
@@ -156,6 +167,12 @@ function bootstrap(): void {
       } else if (action === "showInFolder") {
         const item = downloadEngine.getDownload(param1);
         if (item?.savePath) shell.showItemInFolder(item.savePath);
+      }
+    },
+    currentMediaStreams: () => mediaEngine.getStreams(),
+    onMediaAction: (action: string, param1: string, param2?: unknown) => {
+      if (action === "playNative") {
+        mediaEngine.playNative(param1, { title: typeof param2 === "string" ? param2 : undefined });
       }
     },
   });

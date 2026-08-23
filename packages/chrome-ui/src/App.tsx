@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DownloadItem, Telemetry } from "@mine/contracts";
+import type { DownloadItem, MediaStream, Telemetry } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
@@ -10,6 +10,8 @@ import { SiteInfoPopup } from "./components/SiteInfoPopup.js";
 import { MainMenu } from "./components/MainMenu.js";
 import { DownloadSystem } from "./components/DownloadSystem.js";
 import { FetcherPage } from "./components/FetcherPage.js";
+import { MediaIndicator } from "./components/MediaIndicator.js";
+import { PiPPlayer } from "./components/PiPPlayer.js";
 import { useLiveStats } from "./use-live-stats.js";
 
 export function App(): JSX.Element {
@@ -17,9 +19,11 @@ export function App(): JSX.Element {
   const [maximized, setMaximized] = useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
   const [downloads, setDownloads] = useState<readonly DownloadItem[]>([]);
+  const [mediaStreams, setMediaStreams] = useState<readonly MediaStream[]>([]);
   const [siteInfoOpen, setSiteInfoOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [fullFetcherOpen, setFullFetcherOpen] = useState(false);
+  const [pipOpen, setPipOpen] = useState(false);
 
   useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
   useEffect(() => window.mine.onTelemetry(setTelemetry), []);
@@ -34,6 +38,27 @@ export function App(): JSX.Element {
     if (window.mine.onDownloadsUpdated) {
       const off = window.mine.onDownloadsUpdated((items) => {
         if (active) setDownloads(items);
+      });
+      return () => {
+        active = false;
+        off();
+      };
+    }
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    if (window.mine.getDetectedStreams) {
+      void window.mine.getDetectedStreams().then((res) => {
+        if (active && res.ok) setMediaStreams(res.value);
+      });
+    }
+    if (window.mine.onStreamDetected) {
+      const off = window.mine.onStreamDetected((streams) => {
+        if (active) setMediaStreams(streams);
       });
       return () => {
         active = false;
@@ -72,6 +97,11 @@ export function App(): JSX.Element {
           onToggleSiteInfo={() => setSiteInfoOpen(!siteInfoOpen)}
         />
 
+        <MediaIndicator
+          streams={mediaStreams}
+          onOpenPiP={() => setPipOpen(true)}
+        />
+
         <NetworkSpeedIndicator
           netRequestsPerMinute={telemetry?.netRequestsPerMinute}
         />
@@ -108,6 +138,13 @@ export function App(): JSX.Element {
         <MainMenu
           onClose={() => setMenuOpen(false)}
           onOpenDownloads={() => setFullFetcherOpen(true)}
+        />
+      ) : null}
+
+      {pipOpen ? (
+        <PiPPlayer
+          streams={mediaStreams}
+          onClose={() => setPipOpen(false)}
         />
       ) : null}
 

@@ -3,6 +3,7 @@ export * from "./types/result.js";
 export * from "./types/navigation.js";
 export * from "./types/tab.js";
 export * from "./types/download.js";
+export * from "./types/media.js";
 export * from "./ipc/channels.js";
 export * from "./ipc/schemas.js";
 export * from "./layout/constants.js";

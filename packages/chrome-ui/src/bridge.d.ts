@@ -46,6 +46,9 @@ export interface MineBridge {
   deleteFile(payload: import("@mine/contracts").DeleteFileRequest): Promise<InvokeResult>;
   getStorageInfo(): Promise<Result<import("@mine/contracts").StorageInfo>>;
   onDownloadsUpdated(cb: (payload: DownloadsUpdatedPayload) => void): () => void;
+  getDetectedStreams(): Promise<Result<readonly import("@mine/contracts").MediaStream[]>>;
+  playNativeMedia(payload: import("@mine/contracts").PlayNativeRequest): Promise<InvokeResult>;
+  onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaStream[]) => void): () => void;
 }
 
 declare global {

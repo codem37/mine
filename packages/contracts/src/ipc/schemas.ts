@@ -157,4 +157,28 @@ export type StorageInfo = z.infer<typeof StorageInfoSchema>;
 export const DownloadsUpdatedPayloadSchema = z.array(DownloadItemSchema);
 export type DownloadsUpdatedPayload = readonly DownloadItem[];
 
+import { MEDIA_FORMATS } from "../types/media.js";
+import type { MediaFormat, MediaStream as MineMediaStream, PlayNativeRequest } from "../types/media.js";
+export { MEDIA_FORMATS } from "../types/media.js";
+export type { MediaFormat, MediaStream, PlayNativeRequest } from "../types/media.js";
+
+export const MediaFormatSchema = z.enum(MEDIA_FORMATS);
+
+export const MediaStreamSchema: z.ZodType<MineMediaStream> = z.object({
+  id: z.string().min(1),
+  url: z.string().min(1),
+  mimeType: z.string().min(1),
+  format: MediaFormatSchema,
+  title: z.string().optional(),
+  isDrmProtected: z.boolean(),
+  durationSeconds: z.number().min(0).nullable().optional(),
+});
+
+export const PlayNativeRequestSchema: z.ZodType<PlayNativeRequest> = z.object({
+  streamId: z.string().min(1),
+  url: z.string().min(1),
+  title: z.string().optional(),
+});
+
+
 
