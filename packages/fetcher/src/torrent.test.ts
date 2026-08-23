@@ -36,7 +36,7 @@ describe("TorrentDownload engine simulation", () => {
     }
   });
 
-  it("progresses torrent download, reports peers and completes", async () => {
+  it("reports failure honestly when native BitTorrent engine is unavailable", async () => {
     const uri = "magnet:?xt=urn:btih:1234567890abcdef1234567890abcdef12345678&dn=sample.iso&xl=4096";
     const download = new TorrentDownload({
       id: "tor-1",
@@ -46,21 +46,9 @@ describe("TorrentDownload engine simulation", () => {
 
     await download.start();
 
-    // Wait until completed
-    await new Promise<void>((resolve) => {
-      const check = setInterval(() => {
-        const snap = download.getSnapshot();
-        if (snap.state === "completed") {
-          clearInterval(check);
-          resolve();
-        }
-      }, 50);
-    });
-
     const snapshot = download.getSnapshot();
-    expect(snapshot.state).toBe("completed");
+    expect(snapshot.state).toBe("failed");
     expect(snapshot.isTorrent).toBe(true);
-    expect(snapshot.peersCount).toBeGreaterThan(0);
-    expect(snapshot.downloadedBytes).toBe(4096);
+    expect(snapshot.errorMessage).toContain("BitTorrent protocol engine unavailable");
   });
 });

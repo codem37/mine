@@ -67,6 +67,8 @@ export class TorrentDownload {
   private fileHandle: FileHandle | null = null;
   private timer: ReturnType<typeof setInterval> | null = null;
 
+  private errorMessage?: string;
+
   constructor(options: TorrentDownloadOptions) {
     this.id = options.id;
     this.url = options.magnetUri;
@@ -87,6 +89,7 @@ export class TorrentDownload {
       url: this.url,
       savePath: this.savePath,
       state: this.state,
+      errorMessage: this.errorMessage,
       downloadedBytes: this.downloadedBytes,
       totalBytes: this.totalBytes,
       speedBytesPerSec: this.speedBytesPerSec,
@@ -111,69 +114,11 @@ export class TorrentDownload {
   async start(): Promise<void> {
     if (this.state === "downloading" || this.state === "completed") return;
 
-    this.state = "downloading";
-    this.abortController = new AbortController();
-    this.peersCount = Math.floor(Math.random() * 12) + 4;
-    this.initSegments(8);
+    this.state = "failed";
+    this.errorMessage = "BitTorrent protocol engine unavailable. Native P2P BitTorrent library required for torrent transfers.";
+    this.peersCount = 0;
+    this.speedBytesPerSec = 0;
     this.notify();
-
-    try {
-      this.fileHandle = await open(this.savePath, "w+");
-      await this.fileHandle.truncate(this.totalBytes);
-
-      // Simulate torrent peer piece downloads
-      let currentSeg = 0;
-      const chunkSize = Math.floor(this.totalBytes / this.segments.length);
-
-      this.timer = setInterval(async () => {
-        if (this.abortController?.signal.aborted) {
-          this.stopTimer();
-          return;
-        }
-
-        if (this.downloadedBytes < this.totalBytes) {
-          const step = Math.min(chunkSize / 4, this.totalBytes - this.downloadedBytes);
-          const buf = Buffer.alloc(step, 0x41 + (currentSeg % 26));
-
-          if (this.fileHandle) {
-            await this.fileHandle.write(buf, 0, buf.length, this.downloadedBytes);
-          }
-
-          this.downloadedBytes += step;
-          this.speedBytesPerSec = Math.round(step * 2);
-
-          const seg = this.segments[currentSeg];
-          if (seg) {
-            const segStep = (seg.progressPercent || 0) + 25;
-            seg.progressPercent = Math.min(100, segStep);
-            seg.active = seg.progressPercent < 100;
-            if (seg.progressPercent >= 100 && currentSeg < this.segments.length - 1) {
-              currentSeg++;
-            }
-          }
-
-          const remaining = this.totalBytes - this.downloadedBytes;
-          this.etaSeconds = this.speedBytesPerSec > 0 ? Math.round(remaining / this.speedBytesPerSec) : null;
-          this.notify();
-        } else {
-          this.stopTimer();
-          this.state = "completed";
-          this.speedBytesPerSec = 0;
-          this.etaSeconds = 0;
-          for (const s of this.segments) {
-            s.progressPercent = 100;
-            s.active = false;
-          }
-          await this.cleanup();
-          this.notify();
-        }
-      }, 100);
-    } catch {
-      this.state = "failed";
-      this.stopTimer();
-      await this.cleanup();
-      this.notify();
-    }
   }
 
   private initSegments(count: number): void {

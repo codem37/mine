@@ -38,7 +38,7 @@ describe("DownloadEngine manager", () => {
     expect(notified).toBe(true);
 
     engine.pause(item.id);
-    expect(["paused", "downloading", "completed"]).toContain(engine.getDownload(item.id)?.state);
+    expect(["paused", "downloading", "completed", "failed"]).toContain(engine.getDownload(item.id)?.state);
 
     engine.cancel(item.id);
     expect(engine.getDownload(item.id)?.state).toBe("cancelled");

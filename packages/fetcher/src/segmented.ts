@@ -2,7 +2,7 @@ import { open, stat, unlink } from "node:fs/promises";
 import type { FileHandle } from "node:fs/promises";
 import path from "node:path";
 import type { DownloadItem, DownloadSegment, DownloadState } from "@mine/contracts";
-import { probeUrl, type ProbeResult } from "./probe.js";
+import { extractFilenameFromUrl, probeUrl, sanitizeFilename, type ProbeResult } from "./probe.js";
 
 export interface SegmentState {
   id: number;
@@ -45,10 +45,13 @@ export class SegmentedDownload {
   private lastSampleTime = Date.now();
   private errorMessage: string | null = null;
 
+  private readonly optionsHasFilename: boolean;
+
   constructor(options: SegmentedDownloadOptions) {
     this.id = options.id;
     this.url = options.url;
-    this.filename = options.filename ?? "download.bin";
+    this.optionsHasFilename = Boolean(options.filename);
+    this.filename = sanitizeFilename(options.filename ?? extractFilenameFromUrl(options.url));
     this.saveDir = options.saveDir;
     this.savePath = path.join(this.saveDir, this.filename);
     this.segmentCount = options.segmentCount ?? 8;
@@ -104,9 +107,14 @@ export class SegmentedDownload {
 
       if (this.abortController.signal.aborted) return;
 
-      if (probe.filename && (!this.filename || this.filename === "download.bin")) {
-        this.filename = probe.filename;
-        this.savePath = path.join(this.saveDir, this.filename);
+      if (!this.optionsHasFilename && probe.filename) {
+        this.filename = sanitizeFilename(probe.filename);
+        const resolvedDir = path.resolve(this.saveDir);
+        const resolvedPath = path.resolve(resolvedDir, this.filename);
+        if (!resolvedPath.startsWith(resolvedDir)) {
+          throw new Error("Security check failed: filename attempted path traversal out of saveDir");
+        }
+        this.savePath = resolvedPath;
       }
 
       this.totalBytes = probe.contentLength;
@@ -228,6 +236,12 @@ export class SegmentedDownload {
   }
 
   private async handleRangeFallback(res: Response): Promise<void> {
+    for (const seg of this.segments) {
+      if (seg.id !== 0) {
+        seg.active = false;
+        seg.done = false;
+      }
+    }
     this.segments = [
       {
         id: 0,
@@ -238,6 +252,10 @@ export class SegmentedDownload {
         done: false,
       },
     ];
+
+    if (this.fileHandle) {
+      await this.fileHandle.truncate(0);
+    }
 
     const reader = res.body?.getReader();
     if (!reader) throw new Error("No readable body stream");
