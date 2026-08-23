@@ -14,6 +14,7 @@ export class ShieldEngine {
   #native: NativeEngineLike | null = null;
   #state: ShieldEngineState = "uninitialised";
   #lastError: string | null = null;
+  #enabled = true;
   readonly #listeners = new Set<(state: ShieldEngineState) => void>();
 
   get state(): ShieldEngineState {
@@ -28,6 +29,10 @@ export class ShieldEngine {
     return this.#lastError;
   }
 
+  get enabled(): boolean {
+    return this.#enabled;
+  }
+
   onStateChange(listener: (state: ShieldEngineState) => void): () => void {
     this.#listeners.add(listener);
     return () => this.#listeners.delete(listener);
@@ -35,6 +40,10 @@ export class ShieldEngine {
 
   attachNative(native: NativeEngineLike): void {
     this.#native = native;
+  }
+
+  setEnabled(value: boolean): void {
+    this.#enabled = value;
   }
 
   async loadLists(fetchLists: () => Promise<string[]>): Promise<void> {
@@ -65,6 +74,12 @@ export class ShieldEngine {
     sourceUrl: string,
     resourceType: string,
   ): RequestVerdict {
+    // Disabled short-circuits before the state read and the native call —
+    // one boolean compare replaces the whole lookup, nothing is added
+    // inside the query path itself (1ms budget, CLAUDE.md).
+    if (!this.#enabled) {
+      return { blocked: false, matchedFilter: null };
+    }
     if (this.#state !== "ready" || this.#native === null) {
       return { blocked: false, matchedFilter: null };
     }

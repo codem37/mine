@@ -72,3 +72,49 @@ describe("ShieldEngine state machine", () => {
     );
   });
 });
+
+describe("ShieldEngine enable/disable", () => {
+  it("is enabled by default", () => {
+    expect(new ShieldEngine().enabled).toBe(true);
+  });
+
+  it("disabled short-circuits before the engine is queried, then re-enables", async () => {
+    const rules = new Map<string, boolean>([["https://ads.example.com/x", true]]);
+    let queried = false;
+    const native = fakeNative(rules);
+    const engine = new ShieldEngine();
+    engine.attachNative({
+      replaceFilters(lists: string[]): void {
+        native.replaceFilters(lists);
+      },
+      check(url: string): { blocked: boolean; matchedFilter: string | null } {
+        queried = true;
+        return native.check(url, "", "script");
+      },
+    });
+    await engine.loadLists(async () => ["rule"]);
+
+    engine.setEnabled(false);
+    expect(engine.enabled).toBe(false);
+    expect(
+      engine.checkRequest("https://ads.example.com/x", "", "script"),
+    ).toEqual({ blocked: false, matchedFilter: null });
+    expect(queried).toBe(false);
+
+    engine.setEnabled(true);
+    expect(
+      engine.checkRequest("https://ads.example.com/x", "", "script").blocked,
+    ).toBe(true);
+    expect(queried).toBe(true);
+  });
+
+  it("disable wins even while lists are still loading (state is not 'ready')", async () => {
+    const engine = new ShieldEngine();
+    engine.attachNative(fakeNative(new Map()));
+    engine.setEnabled(false);
+    expect(
+      engine.checkRequest("https://ads.example.com/", "", "script").blocked,
+    ).toBe(false);
+    expect(engine.state).not.toBe("ready");
+  });
+});
