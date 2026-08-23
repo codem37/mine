@@ -56,6 +56,31 @@ function isRequired(name: string): boolean {
   return source !== undefined && !source.optional;
 }
 
+export function isYouTubeMediaStream(urlString: string, sourceUrl: string, resourceType: string): boolean {
+  try {
+    const parsed = new URL(urlString);
+    const host = parsed.hostname.toLowerCase();
+    const isGooglevideoHost = host === "googlevideo.com" || host.endsWith(".googlevideo.com");
+    const isVideoplaybackPath = parsed.pathname === "/videoplayback";
+    const resType = resourceType.toLowerCase();
+    const isMediaResource = resType === "media" || resType === "xmlhttprequest" || resType === "other";
+
+    if (!isGooglevideoHost || !isVideoplaybackPath || !isMediaResource) {
+      return false;
+    }
+
+    const source = sourceUrl.toLowerCase();
+    return (
+      source.includes("youtube.com") ||
+      source.includes("youtube-nocookie.com") ||
+      source.includes("googlevideo.com") ||
+      source === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
 export function createShieldBridge(): ShieldBridge {
   const engine = new ShieldEngine();
   const counts = new BlockedCounter();
@@ -77,23 +102,31 @@ export function createShieldBridge(): ShieldBridge {
       (details, callback) => {
         requestRate.record();
         try {
-          let frameUrl = "";
-          try {
-            frameUrl = details.frame?.url ?? "";
-          } catch {
-            frameUrl = "";
+          const initiator = (details as unknown as { initiator?: string }).initiator || "";
+          let sourceUrl = details.referrer || initiator;
+          if (!sourceUrl) {
+            try {
+              sourceUrl = details.frame?.url ?? "";
+            } catch {
+              sourceUrl = "";
+            }
           }
+
+          const resType = String(details.resourceType);
+
+          if (isYouTubeMediaStream(details.url, sourceUrl, resType)) {
+            callback({ cancel: false });
+            return;
+          }
+
           const verdict = engine.checkRequest(
             details.url,
-            frameUrl,
-            String(details.resourceType),
+            sourceUrl,
+            resType,
           );
           if (!verdict.blocked) {
             callback({ cancel: false });
             return;
-          }
-          if (process.env.NODE_ENV !== "production") {
-            console.debug("[Shield Blocked]", details.url, "Matched rule:", verdict.matchedFilter);
           }
           counts.increment();
           emit({
