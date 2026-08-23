@@ -28,7 +28,13 @@ export function attachChromeProtocol(
     const url = new URL(request.url);
     let rel = url.pathname.replace(/^\/+/, "");
     if (rel === "") {
-      rel = url.host === "newtab" ? "newtab.html" : "index.html";
+      if (url.host === "newtab") {
+        rel = "newtab.html";
+      } else if (url.host === "fetcher" || url.host === "downloads") {
+        rel = "fetcher.html";
+      } else {
+        rel = "index.html";
+      }
     }
     const resolved = resolveSafe(root, rel);
     if (resolved === null) {

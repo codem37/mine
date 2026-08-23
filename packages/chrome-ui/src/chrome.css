@@ -1170,6 +1170,28 @@
 
 /* Modals */
 
+.fetcher-overlay-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(12px);
+  display: grid;
+  place-items: center;
+  z-index: 450;
+  padding: 32px;
+}
+
+.fetcher-overlay-card {
+  width: 100%;
+  max-width: 960px;
+  max-height: 85vh;
+  background: rgba(14, 18, 24, 0.98);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: 24px;
+  overflow-y: auto;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.8);
+}
+
 .fetcher-modal-overlay {
   position: fixed;
   inset: 0;

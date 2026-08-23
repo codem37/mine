@@ -28,6 +28,7 @@ export default defineConfig({
       input: {
         index: resolve(__dirname, "index.html"),
         newtab: resolve(__dirname, "newtab.html"),
+        fetcher: resolve(__dirname, "fetcher.html"),
       },
     },
   },

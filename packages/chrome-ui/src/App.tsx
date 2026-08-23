@@ -213,14 +213,7 @@ export function App(): JSX.Element {
     );
   }
 
-  if (fullFetcherOpen || isFetcherUrl) {
-    return (
-      <FetcherPage
-        downloads={downloads}
-        onClose={() => setFullFetcherOpen(false)}
-      />
-    );
-  }
+
 
   return (
     <div className="hud">
@@ -398,6 +391,14 @@ export function App(): JSX.Element {
 
       {storageModalOpen ? (
         <PinStorageManagerModal onClose={() => setStorageModalOpen(false)} />
+      ) : null}
+
+      {fullFetcherOpen ? (
+        <div className="fetcher-overlay-modal" onClick={() => setFullFetcherOpen(false)}>
+          <div className="fetcher-overlay-card" onClick={(e) => e.stopPropagation()}>
+            <FetcherPage downloads={downloads} onClose={() => setFullFetcherOpen(false)} />
+          </div>
+        </div>
       ) : null}
 
       {menuOpen ? (
