@@ -9,23 +9,165 @@ import "./dash.css";
 
 const PLANNED_LABEL = "planned";
 
-function nodePosition(index: number, total: number, radius: number): { x: number; y: number } {
-  const angle = -Math.PI / 2 + (index / Math.max(1, total)) * Math.PI * 2;
-  return { x: 200 + radius * Math.cos(angle), y: 190 + radius * Math.sin(angle) };
+interface SearchEngineOption {
+  readonly id: string;
+  readonly name: string;
+  readonly icon: string;
+  readonly searchUrl: string;
 }
 
-interface DashNode {
-  readonly label: string;
-  readonly hint?: string;
-  readonly action?: () => void;
+const SEARCH_ENGINES: readonly SearchEngineOption[] = [
+  { id: "duckduckgo", name: "DuckDuckGo", icon: "🦆", searchUrl: "https://duckduckgo.com/?q=" },
+  { id: "searxng", name: "SearXNG", icon: "🔍", searchUrl: "http://localhost:8080/search?q=" },
+  { id: "google", name: "Google", icon: "🌐", searchUrl: "https://www.google.com/search?q=" },
+  { id: "brave", name: "Brave", icon: "🦁", searchUrl: "https://search.brave.com/search?q=" },
+  { id: "bing", name: "Bing", icon: "🔎", searchUrl: "https://www.bing.com/search?q=" },
+  { id: "startpage", name: "Startpage", icon: "🛡", searchUrl: "https://www.startpage.com/sp/search?query=" },
+];
+
+interface QuickLink {
+  readonly id: string;
+  readonly title: string;
+  readonly icon: string;
+  readonly url: string;
+}
+
+const QUICK_LINKS: readonly QuickLink[] = [
+  { id: "github", title: "GitHub", icon: "🐙", url: "https://github.com" },
+  { id: "youtube", title: "YouTube", icon: "▶", url: "https://youtube.com" },
+  { id: "searxng", title: "SearXNG", icon: "⌕", url: "http://localhost:8080" },
+  { id: "downloads", title: "Downloads", icon: "↓", url: "mine://fetcher" },
+  { id: "protection", title: "Protection", icon: "🛡", url: "mine://safety" },
+  { id: "ipfs", title: "IPFS Network", icon: "🌐", url: "mine://ipfs" },
+];
+
+function AtmosphericParticles(): JSX.Element {
+  return (
+    <div className="dash__particles" aria-hidden="true">
+      <div className="dash__particle dash__particle--1" />
+      <div className="dash__particle dash__particle--2" />
+      <div className="dash__particle dash__particle--3" />
+      <div className="dash__particle dash__particle--4" />
+    </div>
+  );
+}
+
+function GlassSearch(): JSX.Element {
+  const [query, setQuery] = useState("");
+  const [selectedEngine, setSelectedEngine] = useState<SearchEngineOption>(SEARCH_ENGINES[0]!);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+
+  const { tabs } = useLiveStats();
+  const activeTabId = tabs?.activeTabId ?? null;
+
+  const handleSubmit = (e: React.FormEvent): void => {
+    e.preventDefault();
+    const raw = query.trim();
+    if (!raw || !activeTabId) return;
+
+    const isDirectUrl = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) || raw.includes(".");
+    const targetUrl = isDirectUrl
+      ? (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`)
+      : `${selectedEngine.searchUrl}${encodeURIComponent(raw)}`;
+
+    void window.mine.navigate({ tabId: activeTabId, url: targetUrl });
+  };
+
+  const handleQuickLink = (url: string): void => {
+    if (!activeTabId) return;
+    void window.mine.navigate({ tabId: activeTabId, url });
+  };
+
+  return (
+    <div className="dash-search-container">
+      {/* Brand Logo Header */}
+      <div className="dash-brand">
+        <h1 className="dash-brand__title">mine</h1>
+        <span className="dash-brand__subtitle">PRIVACY BROWSER</span>
+      </div>
+
+      {/* Main Glassmorphism Search Bar */}
+      <form className="dash-glass-search" onSubmit={handleSubmit} data-testid="dash-glass-search">
+        {/* Left Corner: Search Engine Selector */}
+        <div className="search-engine-selector">
+          <button
+            type="button"
+            className="search-engine-btn"
+            onClick={() => setDropdownOpen(!dropdownOpen)}
+            title={`Active Engine: ${selectedEngine.name} (Click to change)`}
+          >
+            <span className="search-engine__icon">{selectedEngine.icon}</span>
+            <span className="search-engine__name">{selectedEngine.name}</span>
+            <span className="search-engine__arrow">▾</span>
+          </button>
+
+          {dropdownOpen ? (
+            <div className="search-engine-dropdown" onClick={() => setDropdownOpen(false)}>
+              <div className="search-engine-dropdown__card" onClick={(e) => e.stopPropagation()}>
+                <div className="search-engine-dropdown__header">Select Search Engine</div>
+                {SEARCH_ENGINES.map((engine) => (
+                  <button
+                    key={engine.id}
+                    type="button"
+                    className={`search-engine-option ${engine.id === selectedEngine.id ? "search-engine-option--active" : ""}`}
+                    onClick={() => {
+                      setSelectedEngine(engine);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    <span className="search-engine-option__icon">{engine.icon}</span>
+                    <span className="search-engine-option__name">{engine.name}</span>
+                    {engine.id === selectedEngine.id ? <span className="search-engine-option__check">✓</span> : null}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        <div className="search-input-divider" />
+
+        {/* Center Search Input */}
+        <input
+          type="text"
+          className="dash-glass-search__input"
+          placeholder={`Search with ${selectedEngine.name} or enter URL...`}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          autoFocus
+        />
+
+        <button type="submit" className="dash-glass-search__btn" title="Search">
+          ➔
+        </button>
+      </form>
+
+      {/* Quick Links Speed Dial */}
+      <div className="quick-links-grid">
+        {QUICK_LINKS.map((link) => (
+          <button
+            key={link.id}
+            type="button"
+            className="quick-link-card"
+            onClick={() => handleQuickLink(link.url)}
+            title={link.title}
+          >
+            <div className="quick-link__icon">{link.icon}</div>
+            <div className="quick-link__title">{link.title}</div>
+          </button>
+        ))}
+      </div>
+
+      <LiveStatsStrip />
+    </div>
+  );
 }
 
 function LiveStatsStrip(): JSX.Element {
   const { tabs, shield } = useLiveStats();
-  const active =
-    tabs?.tabs.find((t) => t.id === tabs.activeTabId) ?? null;
+  const active = tabs?.tabs.find((t) => t.id === tabs.activeTabId) ?? null;
   return (
-    <dl className="dash__stats" aria-label="live browser stats">
+    <dl className="dash-live-stats" aria-label="live browser stats">
       <StatNode
         label="tabs open"
         value={tabs === null ? null : String(tabs.tabs.length)}
@@ -40,130 +182,17 @@ function LiveStatsStrip(): JSX.Element {
         label="shield blocked"
         value={shield === null ? null : String(shield.blockedCount)}
         tone={shield?.engineState === "failed" ? "error" : "ok"}
-        detail={
-          shield?.engineState === "failed" ? (shield.lastError ?? null) : null
-        }
         testId="dash-blocked"
       />
     </dl>
   );
 }
 
-function AtmosphericParticles(): JSX.Element {
-  return (
-    <div className="dash__particles" aria-hidden="true">
-      <div className="dash__particle dash__particle--1" />
-      <div className="dash__particle dash__particle--2" />
-      <div className="dash__particle dash__particle--3" />
-      <div className="dash__particle dash__particle--4" />
-    </div>
-  );
-}
-
-function CenterSearch(): JSX.Element {
-  const [query, setQuery] = useState("");
-  const { tabs } = useLiveStats();
-
-  const handleSubmit = (e: React.FormEvent): void => {
-    e.preventDefault();
-    const raw = query.trim();
-    if (!raw) return;
-    const activeTabId = tabs?.activeTabId ?? null;
-    if (!activeTabId) return;
-    const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw)
-      ? raw
-      : `https://duckduckgo.com/?q=${encodeURIComponent(raw)}`;
-    void window.mine.navigate({ tabId: activeTabId, url });
-  };
-
-  return (
-    <form className="dash__search" onSubmit={handleSubmit}>
-      <span className="dash__search-icon" aria-hidden="true">🔍</span>
-      <input
-        type="text"
-        className="dash__search-input"
-        placeholder="Search the web or type a URL..."
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        autoFocus
-      />
-    </form>
-  );
-}
-
 export function NewTabDashboard(): JSX.Element {
-  const { tabs } = useLiveStats();
-  const activeTabId = tabs?.activeTabId ?? null;
-
-  const LIVE_NODES: readonly DashNode[] = [
-    { label: "new tab", hint: "opens a fresh tab", action: (): void => { void window.mine.newTab(); } },
-    {
-      label: "downloads",
-      hint: "open download manager",
-      action: (): void => {
-        if (activeTabId) void window.mine.navigate({ tabId: activeTabId, url: "mine://fetcher" });
-      },
-    },
-  ];
-
-  const FUTURE_NODES: readonly DashNode[] = [
-    { label: "safety" },
-    { label: "ipfs" },
-  ];
-
-  const all = [...LIVE_NODES, ...FUTURE_NODES];
-
   return (
     <main className="dash">
       <AtmosphericParticles />
-      <div className="dash__panel">
-        <CenterSearch />
-
-        <svg viewBox="0 0 400 380" className="dash__radial" role="group" aria-label="feature nodes">
-          <circle cx="200" cy="190" r="150" className="dash__orbit" />
-          <circle cx="200" cy="190" r="90" className="dash__orbit dash__orbit--inner" />
-          <text x="200" y="185" textAnchor="middle" className="dash__core">
-            mine
-          </text>
-          <text x="200" y="203" textAnchor="middle" className="dash__core-sub">
-            privacy browser
-          </text>
-          {all.map((node, i) => {
-            const pos = nodePosition(i, all.length, 150);
-            const live = i < LIVE_NODES.length && node.action !== undefined;
-            return live ? (
-              <g
-                key={node.label}
-                className="dash__node"
-                tabIndex={0}
-                role="button"
-                aria-label={node.label}
-                onClick={node.action}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") node.action?.();
-                }}
-              >
-                <circle cx={pos.x} cy={pos.y} r="34" />
-                <text x={pos.x} y={pos.y + 4} textAnchor="middle">
-                  {node.label}
-                </text>
-              </g>
-            ) : (
-              <g key={node.label} className="dash__node dash__node--future">
-                <circle cx={pos.x} cy={pos.y} r="30" />
-                <text x={pos.x} y={pos.y - 2} textAnchor="middle">
-                  {node.label}
-                </text>
-                <text x={pos.x} y={pos.y + 14} textAnchor="middle" className="dash__planned">
-                  {PLANNED_LABEL}
-                </text>
-              </g>
-            );
-          })}
-        </svg>
-        <LiveStatsStrip />
-        <p className="dash__note">type an address or search above — dimmed nodes are planned</p>
-      </div>
+      <GlassSearch />
     </main>
   );
 }
