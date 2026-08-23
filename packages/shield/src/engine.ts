@@ -8,6 +8,10 @@ export interface NativeEngineLike {
     sourceUrl: string,
     resourceType: string,
   ): { blocked: boolean; matchedFilter: string | null };
+  /** Optional: CSS selectors to hide for a page URL */
+  getCosmeticSelectors?(pageUrl: string): string[];
+  /** Optional: full CSS string ready to inject */
+  getCosmeticCSS?(pageUrl: string): string;
 }
 
 export class ShieldEngine {
@@ -91,6 +95,32 @@ export class ShieldEngine {
       };
     } catch {
       return { blocked: false, matchedFilter: null };
+    }
+  }
+
+  /**
+   * Returns CSS ready to inject as element-hiding rules for pageUrl.
+   * Returns empty string if Shield is disabled, engine not ready, or no rules match.
+   * Never logs URL details.
+   */
+  getCosmeticCSS(pageUrl: string): string {
+    if (!this.#enabled || this.#state !== "ready" || this.#native === null) return "";
+    try {
+      return this.#native.getCosmeticCSS?.(pageUrl) ?? "";
+    } catch {
+      return "";
+    }
+  }
+
+  /**
+   * Returns an array of CSS selector strings for element hiding on pageUrl.
+   */
+  getCosmeticSelectors(pageUrl: string): string[] {
+    if (!this.#enabled || this.#state !== "ready" || this.#native === null) return [];
+    try {
+      return this.#native.getCosmeticSelectors?.(pageUrl) ?? [];
+    } catch {
+      return [];
     }
   }
 

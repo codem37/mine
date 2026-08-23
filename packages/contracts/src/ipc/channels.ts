@@ -16,6 +16,13 @@ export const IPC_CHANNELS = {
   shield: {
     getStats: "mine:shield:get-stats",
     setEnabled: "mine:shield:set-enabled",
+    getSiteSettings: "mine:shield:get-site-settings",
+    setSiteSettings: "mine:shield:set-site-settings",
+    getFilterLists: "mine:shield:get-filter-lists",
+    addCustomList: "mine:shield:add-custom-list",
+    removeCustomList: "mine:shield:remove-custom-list",
+    forceUpdateLists: "mine:shield:force-update-lists",
+    getDiagnostics: "mine:shield:get-diagnostics",
   },
   fetcher: {
     getDownloads: "mine:fetcher:get-downloads",

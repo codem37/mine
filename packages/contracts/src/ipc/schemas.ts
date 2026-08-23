@@ -65,6 +65,8 @@ export const NavigationStateSchema: z.ZodType<NavigationState> = z.object({
 export const ShieldStatsSchema = z.object({
   tabId: TabIdSchema.nullable(),
   blockedCount: z.number().int().min(0),
+  adsBlocked: z.number().int().min(0).default(0),
+  trackersBlocked: z.number().int().min(0).default(0),
   engineState: z.enum(SHIELD_ENGINE_STATES),
   lastError: z.string().nullable(),
   enabled: z.boolean(),
@@ -79,6 +81,67 @@ export const SetShieldEnabledRequestSchema = z.object({
 export type SetShieldEnabledRequest = z.infer<
   typeof SetShieldEnabledRequestSchema
 >;
+
+export const SiteShieldSettingsSchema = z.object({
+  domain: z.string().min(1),
+  adsBlocked: z.boolean(),
+  trackersBlocked: z.boolean(),
+  cosmeticsEnabled: z.boolean(),
+  allowlisted: z.boolean(),
+});
+
+export type SiteShieldSettings = z.infer<typeof SiteShieldSettingsSchema>;
+
+export const SetSiteShieldSettingsRequestSchema = z.object({
+  domain: z.string().min(1),
+  adsBlocked: z.boolean().optional(),
+  trackersBlocked: z.boolean().optional(),
+  cosmeticsEnabled: z.boolean().optional(),
+  allowlisted: z.boolean().optional(),
+});
+
+export type SetSiteShieldSettingsRequest = z.infer<typeof SetSiteShieldSettingsRequestSchema>;
+
+export const GetSiteShieldSettingsRequestSchema = z.object({
+  domain: z.string().min(1),
+});
+
+export const FilterListInfoSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  enabled: z.boolean(),
+  optional: z.boolean(),
+  lastUpdated: z.number().nullable(),
+  ruleCount: z.number().int().min(0),
+});
+
+export type FilterListInfo = z.infer<typeof FilterListInfoSchema>;
+
+export const AddCustomListRequestSchema = z.object({
+  url: z.string().url().refine((u) => u.startsWith("https://"), {
+    message: "Custom filter list URLs must use HTTPS",
+  }),
+});
+
+export type AddCustomListRequest = z.infer<typeof AddCustomListRequestSchema>;
+
+export const RemoveCustomListRequestSchema = z.object({
+  name: z.string().min(1),
+});
+
+export const ShieldDiagnosticsSchema = z.object({
+  engineState: z.enum(SHIELD_ENGINE_STATES),
+  networkRules: z.number().int().min(0),
+  cosmeticRules: z.number().int().min(0),
+  listCount: z.number().int().min(0),
+  lastUpdate: z.number().nullable(),
+  adsBlockedTotal: z.number().int().min(0),
+  trackersBlockedTotal: z.number().int().min(0),
+});
+
+export type ShieldDiagnostics = z.infer<typeof ShieldDiagnosticsSchema>;
+
+
 
 export const UnitRequestSchema = z.object({}).strict();
 

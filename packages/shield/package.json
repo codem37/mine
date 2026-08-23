@@ -21,6 +21,7 @@
     "build:native": "cargo build --release --manifest-path native/Cargo.toml && node scripts/copy-native.mjs"
   },
   "dependencies": {
+    "@ghostery/adblocker": "^2.18.2",
     "@mine/contracts": "workspace:*"
   },
   "devDependencies": {

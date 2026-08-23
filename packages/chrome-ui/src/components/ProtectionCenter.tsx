@@ -1,33 +1,57 @@
 import { useEffect, useState } from "react";
-import type { ProtectionCenterStats } from "@mine/contracts";
+import type { ProtectionCenterStats, ShieldDiagnostics } from "@mine/contracts";
 import type { JSX } from "react";
 
 interface Props {
   readonly onClose: () => void;
   readonly onOpenSiteInfo: () => void;
   readonly onOpenEvents: () => void;
+  readonly onOpenShieldPanel?: () => void;
 }
 
-export function ProtectionCenter({ onClose, onOpenSiteInfo, onOpenEvents }: Props): JSX.Element {
+export function ProtectionCenter({ onClose, onOpenSiteInfo, onOpenEvents, onOpenShieldPanel }: Props): JSX.Element {
   const [stats, setStats] = useState<ProtectionCenterStats>({
-    privacy: { adsBlocked: 18, trackersBlocked: 11 },
+    privacy: { adsBlocked: 0, trackersBlocked: 0 },
     safety: { state: "safe", threatsBlocked: 0, suspiciousSites: 0, dangerousDownloads: 0 },
     dbStatus: { status: "current", lastUpdated: Date.now() },
-    activePermissionsCount: 3,
+    activePermissionsCount: 0,
   });
 
   useEffect(() => {
     let active = true;
-    if (window.mine.getProtectionStats) {
-      void window.mine.getProtectionStats().then((res) => {
+
+    // Prefer live shield diagnostics for privacy stats
+    if (window.mine.getShieldDiagnostics) {
+      void window.mine.getShieldDiagnostics().then((res) => {
         if (active && res.ok && res.value) {
-          setStats(res.value);
+          const d = res.value as ShieldDiagnostics;
+          setStats((prev) => ({
+            ...prev,
+            privacy: {
+              adsBlocked: d.adsBlockedTotal,
+              trackersBlocked: d.trackersBlockedTotal,
+            },
+          }));
         }
       });
     }
-    return () => {
-      active = false;
-    };
+
+    // Also load full protection stats (safety + permissions)
+    if (window.mine.getProtectionStats) {
+      void window.mine.getProtectionStats().then((res) => {
+        if (active && res.ok && res.value) {
+          const s = res.value as ProtectionCenterStats;
+          setStats((prev) => ({
+            ...prev,
+            safety: s.safety,
+            dbStatus: s.dbStatus,
+            activePermissionsCount: s.activePermissionsCount,
+          }));
+        }
+      });
+    }
+
+    return () => { active = false; };
   }, []);
 
   return (
@@ -84,6 +108,11 @@ export function ProtectionCenter({ onClose, onOpenSiteInfo, onOpenEvents }: Prop
         </section>
 
         <footer className="protection-center__footer">
+          {onOpenShieldPanel && (
+            <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenShieldPanel}>
+              Open Shield Panel
+            </button>
+          )}
           <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenSiteInfo}>
             Site Information
           </button>

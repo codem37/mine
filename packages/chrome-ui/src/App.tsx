@@ -25,6 +25,8 @@ import { SettingsModal } from "./components/SettingsModal.js";
 import { WorkspaceSelector } from "./components/WorkspaceSelector.js";
 import { HealthRecoveryModal } from "./components/HealthRecoveryModal.js";
 import { useLiveStats } from "./use-live-stats.js";
+import { ShieldPanel } from "./components/ShieldPanel.js";
+import { FilterListModal } from "./components/FilterListModal.js";
 
 const INITIAL_WORKSPACES: readonly Workspace[] = [
   { id: "ws-personal", name: "Personal", icon: "🏠", accent: "cyan", tabIds: [], activeTabId: null },
@@ -56,6 +58,8 @@ export function App(): JSX.Element {
   const [activePlayerSource, setActivePlayerSource] = useState<MediaSource | null>(null);
   const [securityVerdict, setSecurityVerdict] = useState<SecurityVerdict | null>(null);
   const [dismissedLookalike, setDismissedLookalike] = useState(false);
+  const [shieldPanelOpen, setShieldPanelOpen] = useState(false);
+  const [filterListModalOpen, setFilterListModalOpen] = useState(false);
 
   const [workspaces, setWorkspaces] = useState<readonly Workspace[]>(INITIAL_WORKSPACES);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("ws-personal");
@@ -371,7 +375,28 @@ export function App(): JSX.Element {
             setProtectionCenterOpen(false);
             setEventsModalOpen(true);
           }}
+          onOpenShieldPanel={() => {
+            setProtectionCenterOpen(false);
+            setShieldPanelOpen(true);
+          }}
         />
+      ) : null}
+
+      {shieldPanelOpen ? (
+        <ShieldPanel
+          domain={(() => {
+            try { return new URL(active?.url ?? "").hostname; } catch { return ""; }
+          })()}
+          onClose={() => setShieldPanelOpen(false)}
+          onOpenFilterLists={() => {
+            setShieldPanelOpen(false);
+            setFilterListModalOpen(true);
+          }}
+        />
+      ) : null}
+
+      {filterListModalOpen ? (
+        <FilterListModal onClose={() => setFilterListModalOpen(false)} />
       ) : null}
 
       {eventsModalOpen ? (

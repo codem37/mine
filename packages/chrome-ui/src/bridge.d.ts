@@ -1,12 +1,17 @@
 import type {
+  AddCustomListRequest,
   DownloadIdRequest,
   DownloadItem,
   DownloadsUpdatedPayload,
+  FilterListInfo,
   NavigateRequest,
   NewTabRequest,
   Result,
   SetShieldEnabledRequest,
+  SetSiteShieldSettingsRequest,
+  ShieldDiagnostics,
   ShieldStats,
+  SiteShieldSettings,
   TabIdRequest,
   TabsUpdatedPayload,
   Telemetry,
@@ -27,6 +32,13 @@ export interface MineBridge {
   getTabs(): Promise<Result<TabsUpdatedPayload>>;
   getShieldStats(): Promise<Result<ShieldStats>>;
   setShieldEnabled(payload: SetShieldEnabledRequest): Promise<Result<ShieldStats>>;
+  getSiteShieldSettings(domain: string): Promise<Result<SiteShieldSettings>>;
+  setSiteShieldSettings(payload: SetSiteShieldSettingsRequest): Promise<Result<SiteShieldSettings>>;
+  getFilterLists(): Promise<Result<FilterListInfo[]>>;
+  addCustomList(payload: AddCustomListRequest): Promise<InvokeResult>;
+  removeCustomList(name: string): Promise<InvokeResult>;
+  forceUpdateLists(): Promise<InvokeResult>;
+  getShieldDiagnostics(): Promise<Result<ShieldDiagnostics>>;
   minimizeWindow(): Promise<InvokeResult>;
   toggleMaximizeWindow(): Promise<InvokeResult>;
   closeWindow(): Promise<InvokeResult>;

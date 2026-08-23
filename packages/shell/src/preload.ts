@@ -38,6 +38,24 @@ const api = {
     payload: SetShieldEnabledRequest,
   ): Promise<Result<ShieldStats>> =>
     ipcRenderer.invoke(IPC_CHANNELS.shield.setEnabled, payload),
+  getSiteShieldSettings: (domain: string): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.getSiteSettings, { domain }),
+  setSiteShieldSettings: (
+    payload: import("@mine/contracts").SetSiteShieldSettingsRequest,
+  ): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.setSiteSettings, payload),
+  getFilterLists: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.getFilterLists, {}),
+  addCustomList: (
+    payload: import("@mine/contracts").AddCustomListRequest,
+  ): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.addCustomList, payload),
+  removeCustomList: (name: string): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.removeCustomList, { name }),
+  forceUpdateLists: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.forceUpdateLists, {}),
+  getShieldDiagnostics: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.getDiagnostics, {}),
   onTabsUpdated: (
     callback: (payload: TabsUpdatedPayload) => void,
   ): (() => void) => {

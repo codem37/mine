@@ -1,9 +1,11 @@
 import { ipcMain } from "electron";
 import {
+  AddCustomListRequestSchema,
   AddDownloadRequestSchema,
   AddExceptionRequestSchema,
   DeleteFileRequestSchema,
   DownloadIdRequestSchema,
+  GetSiteShieldSettingsRequestSchema,
   IPC_CHANNELS,
   LoadSubtitleRequestSchema,
   MediaControlRequestSchema,
@@ -12,8 +14,10 @@ import {
   NewTabRequestSchema,
   PinRequestSchema,
   PlayNativeRequestSchema,
+  RemoveCustomListRequestSchema,
   SearchRequestSchema,
   SetShieldEnabledRequestSchema,
+  SetSiteShieldSettingsRequestSchema,
   ShieldStatsSchema,
   SuggestRequestSchema,
   TabIdRequestSchema,
@@ -26,6 +30,13 @@ import { parsePayload } from "./core/ipc-parse.js";
 export interface IpcDeps {
   readonly currentShieldStats: () => unknown;
   readonly setShieldEnabled: (enabled: boolean) => void;
+  readonly getSiteShieldSettings?: (domain: string) => unknown;
+  readonly setSiteShieldSettings?: (domain: string, partial: Record<string, unknown>) => void;
+  readonly getFilterLists?: () => unknown[];
+  readonly addCustomFilterList?: (url: string) => void;
+  readonly removeCustomFilterList?: (name: string) => void;
+  readonly forceUpdateFilterLists?: () => Promise<void>;
+  readonly getShieldDiagnostics?: () => unknown;
   readonly currentDownloads?: () => unknown[];
   readonly onDownloadAction?: (action: string, param1: string, param2?: unknown) => void;
   readonly currentMediaStreams?: () => unknown[];
@@ -150,6 +161,53 @@ export function registerIpcHandlers(
       return parsePayload(ShieldStatsSchema, deps.currentShieldStats());
     },
   );
+
+  ipcMain.handle(IPC_CHANNELS.shield.getSiteSettings, async (_event, raw: unknown) => {
+    const payload = parsePayload(GetSiteShieldSettingsRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getSiteShieldSettings?.(payload.value.domain) ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.setSiteSettings, async (_event, raw: unknown) => {
+    const payload = parsePayload(SetSiteShieldSettingsRequestSchema, raw);
+    if (!payload.ok) return payload;
+    const { domain, ...partial } = payload.value;
+    deps.setSiteShieldSettings?.(domain, partial as Record<string, unknown>);
+    return { ok: true, value: deps.getSiteShieldSettings?.(domain) ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.getFilterLists, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getFilterLists?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.addCustomList, async (_event, raw: unknown) => {
+    const payload = parsePayload(AddCustomListRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.addCustomFilterList?.(payload.value.url);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.removeCustomList, async (_event, raw: unknown) => {
+    const payload = parsePayload(RemoveCustomListRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.removeCustomFilterList?.(payload.value.name);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.forceUpdateLists, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    await deps.forceUpdateFilterLists?.();
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shield.getDiagnostics, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getShieldDiagnostics?.() ?? null } as const;
+  });
 
   // Fetcher / Downloads Handlers
   ipcMain.handle(IPC_CHANNELS.fetcher.getDownloads, async (_event, raw: unknown) => {
