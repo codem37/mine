@@ -87,8 +87,8 @@ export function CinematicPlayer({ source, onClose, onOpenQueue, onOpenHistory }:
     };
   }, []);
 
-  const sendControl = useCallback((action: import("@mine/contracts").MediaControlRequest["action"], value?: unknown) => {
-    void window.mine.controlMedia?.({ action, value });
+  const sendControl = useCallback((action: import("@mine/contracts").MediaControlRequest["action"], value?: any) => {
+    void window.mine.controlMedia?.({ action, value: value as any });
   }, []);
 
   // Keyboard Shortcuts (Space, Arrows, M, F)
@@ -176,8 +176,10 @@ export function CinematicPlayer({ source, onClose, onOpenQueue, onOpenHistory }:
   };
 
   const transform = playerState.videoTransform;
-  const transformStyle = {
-    objectFit: transform.fit,
+  const objectFitValue: import("react").CSSProperties["objectFit"] =
+    transform.fit === "original" ? "none" : transform.fit;
+  const transformStyle: import("react").CSSProperties = {
+    objectFit: objectFitValue,
     transform: `rotate(${transform.rotation}deg) scaleX(${transform.flipH ? -1 : 1}) scaleY(${transform.flipV ? -1 : 1})`,
   };
 
@@ -420,7 +422,6 @@ export function CinematicPlayer({ source, onClose, onOpenQueue, onOpenHistory }:
                 <div key={idx} className="eq-band">
                   <input
                     type="range"
-                    orient="vertical"
                     min={-6}
                     max={6}
                     value={val}

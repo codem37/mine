@@ -92,6 +92,9 @@ export function createShieldBridge(): ShieldBridge {
             callback({ cancel: false });
             return;
           }
+          if (process.env.NODE_ENV !== "production") {
+            console.debug("[Shield Blocked]", details.url, "Matched rule:", verdict.matchedFilter);
+          }
           counts.increment();
           emit({
             webContentsId: details.webContentsId ?? null,

@@ -7,23 +7,35 @@ export interface ProbeResult {
   readonly contentType?: string;
 }
 
+const WINDOWS_RESERVED = /^(con|prn|aux|nul|com[1-9]|lpt[1-9])(\..*)?$/i;
+
+export function sanitizeFilename(raw: string): string {
+  let name = raw.replace(/^.*[\\/]/, "").trim();
+  name = name.replace(/[\x00-\x1f\x7f\x80-\x9f<>:"/\\|?*]/g, "_");
+  name = name.replace(/^\.+/, "").replace(/\.+$/, "").trim();
+  if (!name || WINDOWS_RESERVED.test(name)) {
+    name = `download_${name || "file"}`;
+  }
+  return name.slice(0, 240);
+}
+
 export function extractFilenameFromDisposition(disposition: string | null): string | null {
   if (!disposition) return null;
-  // Match filename*=UTF-8''encoded_name
+  let raw: string | null = null;
   const utf8Match = disposition.match(/filename\*=UTF-8''([^;]+)/i);
   if (utf8Match?.[1]) {
     try {
-      return decodeURIComponent(utf8Match[1].trim());
+      raw = decodeURIComponent(utf8Match[1].trim());
     } catch {
-      return utf8Match[1].trim();
+      raw = utf8Match[1].trim();
+    }
+  } else {
+    const standardMatch = disposition.match(/filename=["']?([^"';]+)["']?/i);
+    if (standardMatch?.[1]) {
+      raw = standardMatch[1].trim();
     }
   }
-  // Match filename="name" or filename=name
-  const standardMatch = disposition.match(/filename=["']?([^"';]+)["']?/i);
-  if (standardMatch?.[1]) {
-    return standardMatch[1].trim();
-  }
-  return null;
+  return raw ? sanitizeFilename(raw) : null;
 }
 
 export function extractFilenameFromUrl(urlString: string): string {
@@ -33,7 +45,7 @@ export function extractFilenameFromUrl(urlString: string): string {
     const segments = pathname.split("/").filter(Boolean);
     const last = segments[segments.length - 1];
     if (last && last.trim().length > 0) {
-      return decodeURIComponent(last);
+      return sanitizeFilename(decodeURIComponent(last));
     }
   } catch {
     // fallback

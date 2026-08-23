@@ -42,7 +42,7 @@ export function MainMenu({
     } else if (id === "new-window") {
       void window.mine.newTab({ url: "mine://newtab/" });
     } else if (id === "private-window") {
-      void window.mine.newTab({ url: "mine://newtab/", partition: "incognito" });
+      void window.mine.newTab({ url: "mine://newtab/" });
     } else if (id === "command-center") {
       onOpenCommandCenter?.();
     } else if (id === "browser-center") {

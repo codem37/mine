@@ -118,3 +118,21 @@ describe("ShieldEngine enable/disable", () => {
     expect(engine.state).not.toBe("ready");
   });
 });
+
+describe("ShieldEngine allowlist", () => {
+  it("allows sites on the allowlist to bypass blocking", async () => {
+    const rules = new Map<string, boolean>([["https://googlevideo.com/videoplayback", true]]);
+    const engine = new ShieldEngine();
+    engine.attachNative(fakeNative(rules));
+    await engine.loadLists(async () => ["rule"]);
+
+    expect(engine.checkRequest("https://googlevideo.com/videoplayback", "https://youtube.com/", "media").blocked).toBe(true);
+
+    engine.allowSite("youtube.com");
+    expect(engine.isSiteAllowed("https://youtube.com/watch?v=123")).toBe(true);
+    expect(engine.checkRequest("https://googlevideo.com/videoplayback", "https://youtube.com/watch?v=123", "media").blocked).toBe(false);
+
+    engine.disallowSite("youtube.com");
+    expect(engine.checkRequest("https://googlevideo.com/videoplayback", "https://youtube.com/", "media").blocked).toBe(true);
+  });
+});

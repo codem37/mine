@@ -19,6 +19,7 @@ export class ShieldEngine {
   #state: ShieldEngineState = "uninitialised";
   #lastError: string | null = null;
   #enabled = true;
+  readonly #allowlist = new Set<string>();
   readonly #listeners = new Set<(state: ShieldEngineState) => void>();
 
   get state(): ShieldEngineState {
@@ -35,6 +36,35 @@ export class ShieldEngine {
 
   get enabled(): boolean {
     return this.#enabled;
+  }
+
+  get allowlist(): readonly string[] {
+    return Array.from(this.#allowlist);
+  }
+
+  allowSite(hostnameOrDomain: string): void {
+    if (hostnameOrDomain) {
+      this.#allowlist.add(hostnameOrDomain.toLowerCase());
+    }
+  }
+
+  disallowSite(hostnameOrDomain: string): void {
+    if (hostnameOrDomain) {
+      this.#allowlist.delete(hostnameOrDomain.toLowerCase());
+    }
+  }
+
+  isSiteAllowed(sourceUrl: string): boolean {
+    if (this.#allowlist.size === 0 || !sourceUrl) return false;
+    try {
+      const host = new URL(sourceUrl).hostname.toLowerCase();
+      for (const domain of this.#allowlist) {
+        if (host === domain || host.endsWith(`.${domain}`)) return true;
+      }
+    } catch {
+      // ignore
+    }
+    return false;
   }
 
   onStateChange(listener: (state: ShieldEngineState) => void): () => void {
@@ -78,10 +108,8 @@ export class ShieldEngine {
     sourceUrl: string,
     resourceType: string,
   ): RequestVerdict {
-    // Disabled short-circuits before the state read and the native call —
-    // one boolean compare replaces the whole lookup, nothing is added
-    // inside the query path itself (1ms budget, CLAUDE.md).
-    if (!this.#enabled) {
+    // Disabled or allowlisted site short-circuits evaluation
+    if (!this.#enabled || this.isSiteAllowed(sourceUrl) || this.isSiteAllowed(url)) {
       return { blocked: false, matchedFilter: null };
     }
     if (this.#state !== "ready" || this.#native === null) {

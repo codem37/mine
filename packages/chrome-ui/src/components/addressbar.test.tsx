@@ -7,6 +7,8 @@ function shield(overrides: Partial<ShieldStats> = {}): ShieldStats {
   return {
     tabId: null,
     blockedCount: 0,
+    adsBlocked: 0,
+    trackersBlocked: 0,
     engineState: "ready",
     lastError: null,
     enabled: true,

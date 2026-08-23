@@ -288,7 +288,7 @@ export function App(): JSX.Element {
           isPlaying={playerState?.status === "playing"}
           onOpenPlayer={() => {
             if (mediaSources.length > 0) {
-              setActivePlayerSource(mediaSources[mediaSources.length - 1] ?? mediaSources[0]);
+              setActivePlayerSource(mediaSources[mediaSources.length - 1] ?? mediaSources[0] ?? null);
             } else {
               setBubbleOpen(true);
             }
