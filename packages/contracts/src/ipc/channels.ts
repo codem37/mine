@@ -15,6 +15,7 @@ export const IPC_CHANNELS = {
   },
   shield: {
     getStats: "mine:shield:get-stats",
+    setEnabled: "mine:shield:set-enabled",
   },
 } as const;
 

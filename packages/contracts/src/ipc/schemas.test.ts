@@ -3,6 +3,7 @@ import {
   NavigateRequestSchema,
   NavigationStateSchema,
   NewTabRequestSchema,
+  SetShieldEnabledRequestSchema,
   ShieldStatsSchema,
   TabListSchema,
   TabsUpdatedPayloadSchema,
@@ -89,6 +90,7 @@ describe("ShieldStatsSchema", () => {
         blockedCount: 12,
         engineState: "ready",
         lastError: null,
+        enabled: true,
       }),
     ).not.toThrow();
   });
@@ -100,6 +102,7 @@ describe("ShieldStatsSchema", () => {
         blockedCount: 0,
         engineState: "loading",
         lastError: null,
+        enabled: true,
       }),
     ).not.toThrow();
   });
@@ -110,19 +113,32 @@ describe("ShieldStatsSchema", () => {
       blockedCount: 0,
       engineState: "failed",
       lastError: "required filter source 'easylist' unavailable",
+      enabled: true,
     });
     expect(parsed.lastError).toBe(
       "required filter source 'easylist' unavailable",
     );
   });
 
-  it("rejects negative counts, unknown states, and missing lastError", () => {
+  it("carries the enabled flag so the UI can show on vs off", () => {
+    const off = ShieldStatsSchema.parse({
+      tabId: null,
+      blockedCount: 0,
+      engineState: "ready",
+      lastError: null,
+      enabled: false,
+    });
+    expect(off.enabled).toBe(false);
+  });
+
+  it("rejects negative counts, unknown states, missing lastError, missing enabled", () => {
     expect(() =>
       ShieldStatsSchema.parse({
         tabId: "t",
         blockedCount: -1,
         engineState: "ready",
         lastError: null,
+        enabled: true,
       }),
     ).toThrow();
     expect(() =>
@@ -131,6 +147,7 @@ describe("ShieldStatsSchema", () => {
         blockedCount: 0,
         engineState: "99%",
         lastError: null,
+        enabled: true,
       }),
     ).toThrow();
     expect(() =>
@@ -140,6 +157,33 @@ describe("ShieldStatsSchema", () => {
         engineState: "ready",
       }),
     ).toThrow();
+    expect(() =>
+      ShieldStatsSchema.parse({
+        tabId: "t",
+        blockedCount: 0,
+        engineState: "ready",
+        lastError: null,
+      }),
+    ).toThrow();
+  });
+});
+
+describe("SetShieldEnabledRequestSchema", () => {
+  it("accepts an explicit boolean", () => {
+    expect(SetShieldEnabledRequestSchema.parse({ enabled: true })).toEqual({
+      enabled: true,
+    });
+    expect(SetShieldEnabledRequestSchema.parse({ enabled: false })).toEqual({
+      enabled: false,
+    });
+  });
+
+  it("rejects truthy non-boolean values", () => {
+    expect(() => SetShieldEnabledRequestSchema.parse({ enabled: 1 })).toThrow();
+    expect(() =>
+      SetShieldEnabledRequestSchema.parse({ enabled: "yes" }),
+    ).toThrow();
+    expect(() => SetShieldEnabledRequestSchema.parse({})).toThrow();
   });
 });
 

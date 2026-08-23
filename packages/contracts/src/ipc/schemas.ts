@@ -60,9 +60,18 @@ export const ShieldStatsSchema = z.object({
   blockedCount: z.number().int().min(0),
   engineState: z.enum(SHIELD_ENGINE_STATES),
   lastError: z.string().nullable(),
+  enabled: z.boolean(),
 });
 
 export type ShieldStats = z.infer<typeof ShieldStatsSchema>;
+
+export const SetShieldEnabledRequestSchema = z.object({
+  enabled: z.boolean(),
+});
+
+export type SetShieldEnabledRequest = z.infer<
+  typeof SetShieldEnabledRequestSchema
+>;
 
 export const UnitRequestSchema = z.object({}).strict();
 
