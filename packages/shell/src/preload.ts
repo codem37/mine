@@ -32,6 +32,8 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.shell.stop, payload),
   getTabs: (): Promise<Result<TabsUpdatedPayload>> =>
     ipcRenderer.invoke(IPC_CHANNELS.shell.getTabs, {}),
+  setOverlayActive: (active: boolean): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shell.setOverlayActive, { active }),
   getShieldStats: (): Promise<Result<ShieldStats>> =>
     ipcRenderer.invoke(IPC_CHANNELS.shield.getStats, {}),
   setShieldEnabled: (

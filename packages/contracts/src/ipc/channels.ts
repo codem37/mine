@@ -12,6 +12,7 @@ export const IPC_CHANNELS = {
     toggleMaximizeWindow: "mine:shell:toggle-maximize-window",
     closeWindow: "mine:shell:close-window",
     getTabs: "mine:shell:get-tabs",
+    setOverlayActive: "mine:shell:set-overlay-active",
   },
   shield: {
     getStats: "mine:shield:get-stats",

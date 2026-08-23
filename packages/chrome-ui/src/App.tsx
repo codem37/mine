@@ -194,6 +194,32 @@ export function App(): JSX.Element {
     }
   };
 
+  const isAnyOverlayOpen = Boolean(
+    siteInfoOpen ||
+    protectionCenterOpen ||
+    eventsModalOpen ||
+    protocolModalOpen ||
+    storageModalOpen ||
+    browserCenterOpen ||
+    commandCenterOpen ||
+    settingsOpen ||
+    healthModalOpen ||
+    menuOpen ||
+    fullFetcherOpen ||
+    bubbleOpen ||
+    activePlayerSource ||
+    shieldPanelOpen ||
+    filterListModalOpen ||
+    mediaQueueOpen ||
+    mediaHistoryOpen
+  );
+
+  useEffect(() => {
+    if (window.mine.setOverlayActive) {
+      void window.mine.setOverlayActive(isAnyOverlayOpen);
+    }
+  }, [isAnyOverlayOpen]);
+
   // Trusted Full-Page Interstitial when navigation is blocked (Phishing/Malware)
   if (securityVerdict?.state === "blocked") {
     return (
@@ -469,6 +495,11 @@ export function App(): JSX.Element {
         <MainMenu
           onClose={() => setMenuOpen(false)}
           onOpenDownloads={() => setFullFetcherOpen(true)}
+          onOpenMedia={() => setBubbleOpen(true)}
+          onOpenProtection={() => setProtectionCenterOpen(true)}
+          onOpenBrowserCenter={() => setBrowserCenterOpen(true)}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onOpenDiagnostics={() => setHealthModalOpen(true)}
         />
       ) : null}
 

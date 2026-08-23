@@ -3,6 +3,11 @@ import type { JSX } from "react";
 interface Props {
   readonly onClose: () => void;
   readonly onOpenDownloads?: () => void;
+  readonly onOpenMedia?: () => void;
+  readonly onOpenProtection?: () => void;
+  readonly onOpenBrowserCenter?: () => void;
+  readonly onOpenSettings?: () => void;
+  readonly onOpenDiagnostics?: () => void;
 }
 
 interface MenuItem {
@@ -13,7 +18,15 @@ interface MenuItem {
   readonly action?: () => void;
 }
 
-export function MainMenu({ onClose, onOpenDownloads }: Props): JSX.Element {
+export function MainMenu({
+  onClose,
+  onOpenDownloads,
+  onOpenMedia,
+  onOpenProtection,
+  onOpenBrowserCenter,
+  onOpenSettings,
+  onOpenDiagnostics,
+}: Props): JSX.Element {
   const handleAction = (item: MenuItem): void => {
     if (item.id === "new-tab") {
       void window.mine.newTab();
@@ -21,6 +34,16 @@ export function MainMenu({ onClose, onOpenDownloads }: Props): JSX.Element {
       void window.mine.newTab({ url: "mine://newtab/" });
     } else if (item.id === "downloads") {
       onOpenDownloads?.();
+    } else if (item.id === "media") {
+      onOpenMedia?.();
+    } else if (item.id === "protection") {
+      onOpenProtection?.();
+    } else if (item.id === "browser-center") {
+      onOpenBrowserCenter?.();
+    } else if (item.id === "settings") {
+      onOpenSettings?.();
+    } else if (item.id === "diagnostics") {
+      onOpenDiagnostics?.();
     } else if (item.id === "exit") {
       void window.mine.closeWindow();
     }
@@ -28,17 +51,14 @@ export function MainMenu({ onClose, onOpenDownloads }: Props): JSX.Element {
   };
 
   const items: readonly MenuItem[] = [
-    { id: "new-tab", icon: "+", label: "New Tab", shortcut: "Ctrl+T" },
-    { id: "new-window", icon: "□", label: "New Window", shortcut: "Ctrl+N" },
-    { id: "private-window", icon: "🕶", label: "Private Window", shortcut: "Ctrl+Shift+N" },
-    { id: "history", icon: "◷", label: "History", shortcut: "Ctrl+H" },
-    { id: "downloads", icon: "↓", label: "Downloads", shortcut: "Ctrl+J" },
-    { id: "bookmarks", icon: "★", label: "Bookmarks", shortcut: "Ctrl+D" },
-    { id: "zoom", icon: "🔍", label: "Zoom", shortcut: "100%" },
-    { id: "find", icon: "🔎", label: "Find on Page", shortcut: "Ctrl+F" },
-    { id: "print", icon: "🖨", label: "Print", shortcut: "Ctrl+P" },
-    { id: "settings", icon: "⚙", label: "Settings" },
-    { id: "help", icon: "?", label: "Help" },
+    { id: "new-tab", icon: "➕", label: "New Tab", shortcut: "Ctrl+T" },
+    { id: "new-window", icon: "🗔", label: "New Window", shortcut: "Ctrl+N" },
+    { id: "browser-center", icon: "❖", label: "Browser Center", shortcut: "Ctrl+K" },
+    { id: "downloads", icon: "📥", label: "Downloads (Fetcher)", shortcut: "Ctrl+J" },
+    { id: "media", icon: "🎬", label: "Media Player Engine" },
+    { id: "protection", icon: "🛡️", label: "Protection & Safety" },
+    { id: "settings", icon: "⚙️", label: "Settings & Options" },
+    { id: "diagnostics", icon: "🩺", label: "Subsystem Diagnostics" },
     { id: "exit", icon: "✕", label: "Exit Browser" },
   ];
 

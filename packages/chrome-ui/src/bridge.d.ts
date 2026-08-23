@@ -30,6 +30,7 @@ export interface MineBridge {
   reload(payload: TabIdRequest): Promise<InvokeResult>;
   stop(payload: TabIdRequest): Promise<InvokeResult>;
   getTabs(): Promise<Result<TabsUpdatedPayload>>;
+  setOverlayActive(active: boolean): Promise<InvokeResult>;
   getShieldStats(): Promise<Result<ShieldStats>>;
   setShieldEnabled(payload: SetShieldEnabledRequest): Promise<Result<ShieldStats>>;
   getSiteShieldSettings(domain: string): Promise<Result<SiteShieldSettings>>;

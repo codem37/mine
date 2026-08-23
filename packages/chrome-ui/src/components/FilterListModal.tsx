@@ -165,10 +165,10 @@ export function FilterListModal({ onClose }: Props): JSX.Element {
             />
             <button
               type="submit"
-              className="glass-btn glass-btn--sm"
+              className="glass-btn--pill"
               disabled={addingList || !customUrl}
             >
-              {addingList ? "Adding…" : "Add List"}
+              {addingList ? "Adding…" : "➕ Add List"}
             </button>
           </form>
           {customUrlError && (
@@ -183,11 +183,11 @@ export function FilterListModal({ onClose }: Props): JSX.Element {
           {updateMsg && <span className="filter-list-update-msg">{updateMsg}</span>}
           <button
             type="button"
-            className="glass-btn glass-btn--primary"
+            className="glass-btn--pill glass-btn--primary"
             onClick={handleForceUpdate}
             disabled={updating}
           >
-            {updating ? "Updating…" : "Force Update All"}
+            {updating ? "Updating…" : "🔄 Force Update All"}
           </button>
         </footer>
       </div>

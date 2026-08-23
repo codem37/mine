@@ -145,10 +145,10 @@ export function ShieldPanel({ domain, onClose, onOpenFilterLists }: Props): JSX.
         <footer className="shield-panel__footer">
           <button
             type="button"
-            className="glass-btn glass-btn--sm"
+            className="glass-btn--pill"
             onClick={onOpenFilterLists}
           >
-            Manage Filter Lists
+            📜 Manage Filter Lists
           </button>
         </footer>
       </div>

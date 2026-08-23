@@ -111,8 +111,8 @@ export function BrowserCenter({
         </div>
 
         <footer className="browser-center__footer">
-          <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenSettings}>
-            ⚙ Settings
+          <button type="button" className="glass-btn--pill" onClick={onOpenSettings}>
+            ⚙️ Settings & Customization
           </button>
         </footer>
       </div>

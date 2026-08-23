@@ -312,6 +312,14 @@ export class TabManager {
     }
   }
 
+  private overlayActive = false;
+
+  setOverlayActive(active: boolean): void {
+    if (this.overlayActive === active) return;
+    this.overlayActive = active;
+    this.applyLayout();
+  }
+
   private applyLayout(): void {
     const [width, height] = this.window.getSize();
     const bounds = contentBounds(width ?? 800, height ?? 600);
@@ -319,15 +327,23 @@ export class TabManager {
       const tab = this.tabs.get(id);
       if (tab === undefined) continue;
       tab.view.setBounds(bounds);
-      if (id !== this.activeId) {
-        this.window.contentView.removeChildView(tab.view);
+      if (id !== this.activeId || this.overlayActive) {
+        try {
+          this.window.contentView.removeChildView(tab.view);
+        } catch {
+          // ignore
+        }
       }
     }
     const active = this.activeId === null ? undefined : this.tabs.get(this.activeId);
-    if (active !== undefined) {
-      this.window.contentView.removeChildView(active.view);
-      this.window.contentView.addChildView(active.view);
-      active.view.setBounds(bounds);
+    if (active !== undefined && !this.overlayActive) {
+      try {
+        this.window.contentView.removeChildView(active.view);
+        this.window.contentView.addChildView(active.view);
+        active.view.setBounds(bounds);
+      } catch {
+        // ignore
+      }
     }
   }
 

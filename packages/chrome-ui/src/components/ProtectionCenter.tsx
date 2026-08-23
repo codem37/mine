@@ -58,8 +58,8 @@ export function ProtectionCenter({ onClose, onOpenSiteInfo, onOpenEvents, onOpen
     <div className="protection-center-overlay" onClick={onClose} data-testid="protection-center">
       <div className="protection-center-card" onClick={(e) => e.stopPropagation()}>
         <header className="protection-center__header">
-          <h3>Protection Center</h3>
-          <button type="button" className="glass-btn glass-btn--sm" onClick={onClose}>✕</button>
+          <h3>🛡️ Protection Center</h3>
+          <button type="button" className="glass-btn" onClick={onClose} aria-label="Close">✕</button>
         </header>
 
         {/* Privacy Section (Shield) */}
@@ -109,15 +109,15 @@ export function ProtectionCenter({ onClose, onOpenSiteInfo, onOpenEvents, onOpen
 
         <footer className="protection-center__footer">
           {onOpenShieldPanel && (
-            <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenShieldPanel}>
-              Open Shield Panel
+            <button type="button" className="glass-btn--pill" onClick={onOpenShieldPanel}>
+              🛡️ Shield Panel
             </button>
           )}
-          <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenSiteInfo}>
-            Site Information
+          <button type="button" className="glass-btn--pill" onClick={onOpenSiteInfo}>
+            ℹ️ Site Information
           </button>
-          <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenEvents}>
-            Security Events History
+          <button type="button" className="glass-btn--pill" onClick={onOpenEvents}>
+            📜 Security Events
           </button>
         </footer>
       </div>

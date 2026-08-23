@@ -54,6 +54,11 @@ export const TabsUpdatedPayloadSchema = z.object({
 
 export type TabsUpdatedPayload = z.infer<typeof TabsUpdatedPayloadSchema>;
 
+export const SetOverlayActiveRequestSchema = z.object({
+  active: z.boolean(),
+});
+export type SetOverlayActiveRequest = z.infer<typeof SetOverlayActiveRequestSchema>;
+
 export const NavigationStateSchema: z.ZodType<NavigationState> = z.object({
   url: UrlSchema,
   canGoBack: z.boolean(),

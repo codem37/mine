@@ -16,6 +16,7 @@ import {
   PlayNativeRequestSchema,
   RemoveCustomListRequestSchema,
   SearchRequestSchema,
+  SetOverlayActiveRequestSchema,
   SetShieldEnabledRequestSchema,
   SetSiteShieldSettingsRequestSchema,
   ShieldStatsSchema,
@@ -147,6 +148,13 @@ export function registerIpcHandlers(
     const payload = parsePayload(UnitRequestSchema, raw);
     if (!payload.ok) return payload;
     return parsePayload(TabsUpdatedPayloadSchema, manager.snapshot());
+  });
+
+  ipcMain.handle(IPC_CHANNELS.shell.setOverlayActive, async (_event, raw: unknown) => {
+    const payload = parsePayload(SetOverlayActiveRequestSchema, raw);
+    if (!payload.ok) return payload;
+    manager.setOverlayActive(payload.value.active);
+    return { ok: true, value: null } as const;
   });
 
   ipcMain.handle(
