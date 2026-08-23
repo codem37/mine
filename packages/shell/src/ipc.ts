@@ -3,6 +3,7 @@ import {
   IPC_CHANNELS,
   NavigateRequestSchema,
   NewTabRequestSchema,
+  SetShieldEnabledRequestSchema,
   ShieldStatsSchema,
   TabIdRequestSchema,
   TabsUpdatedPayloadSchema,
@@ -13,6 +14,7 @@ import { parsePayload } from "./core/ipc-parse.js";
 
 export interface IpcDeps {
   readonly currentShieldStats: () => unknown;
+  readonly setShieldEnabled: (enabled: boolean) => void;
 }
 
 export function registerIpcHandlers(
@@ -102,6 +104,16 @@ export function registerIpcHandlers(
     async (_event, raw: unknown) => {
       const payload = parsePayload(UnitRequestSchema, raw);
       if (!payload.ok) return payload;
+      return parsePayload(ShieldStatsSchema, deps.currentShieldStats());
+    },
+  );
+
+  ipcMain.handle(
+    IPC_CHANNELS.shield.setEnabled,
+    async (_event, raw: unknown) => {
+      const payload = parsePayload(SetShieldEnabledRequestSchema, raw);
+      if (!payload.ok) return payload;
+      deps.setShieldEnabled(payload.value.enabled);
       return parsePayload(ShieldStatsSchema, deps.currentShieldStats());
     },
   );

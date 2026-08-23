@@ -4,6 +4,7 @@ import type {
   NavigateRequest,
   NewTabRequest,
   Result,
+  SetShieldEnabledRequest,
   ShieldStats,
   TabIdRequest,
   TabsUpdatedPayload,
@@ -33,6 +34,10 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.shell.getTabs, {}),
   getShieldStats: (): Promise<Result<ShieldStats>> =>
     ipcRenderer.invoke(IPC_CHANNELS.shield.getStats, {}),
+  setShieldEnabled: (
+    payload: SetShieldEnabledRequest,
+  ): Promise<Result<ShieldStats>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.shield.setEnabled, payload),
   onTabsUpdated: (
     callback: (payload: TabsUpdatedPayload) => void,
   ): (() => void) => {

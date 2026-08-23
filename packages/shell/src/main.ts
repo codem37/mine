@@ -35,7 +35,13 @@ function emitWindowState(): void {
 function currentShieldStats(origin?: { readonly webContentsId: number | null }): unknown {
   const bridge = bridgeRef;
   if (bridge === null || manager === null) {
-    return { tabId: null, blockedCount: 0, engineState: "uninitialised", lastError: null };
+    return {
+      tabId: null,
+      blockedCount: 0,
+      engineState: "uninitialised",
+      lastError: null,
+      enabled: true,
+    };
   }
   const tabId =
     origin?.webContentsId == null
@@ -46,6 +52,7 @@ function currentShieldStats(origin?: { readonly webContentsId: number | null }):
     blockedCount: bridge.counts.total,
     engineState: bridge.engine.state,
     lastError: bridge.engine.lastError,
+    enabled: bridge.engine.enabled,
   });
 }
 
@@ -110,7 +117,15 @@ function bootstrap(): void {
       new URL("./preload.cjs", import.meta.url),
     ),
   });
-  registerIpcHandlers(manager, win, { currentShieldStats });
+  const setShieldEnabled = (enabled: boolean): void => {
+    if (bridge === null) return;
+    bridge.engine.setEnabled(enabled);
+    broadcast(
+      IPC_EVENTS.shield.statsUpdated,
+      currentShieldStats({ webContentsId: null }),
+    );
+  };
+  registerIpcHandlers(manager, win, { currentShieldStats, setShieldEnabled });
 
   win.on("maximize", emitWindowState);
   win.on("unmaximize", emitWindowState);
