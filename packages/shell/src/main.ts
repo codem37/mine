@@ -11,6 +11,8 @@ import { SearchEngine } from "@mine/search";
 import { SafetyEngine } from "@mine/safety";
 import { ProtocolManager } from "@mine/protocol";
 import { TabManager } from "./tab-manager.js";
+import { SessionStore } from "./session-store.js";
+import { HealthMonitor } from "./health-monitor.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
   attachChromeProtocol,
@@ -138,6 +140,8 @@ function bootstrap(): void {
   const searchEngine = new SearchEngine();
   const safetyEngine = new SafetyEngine();
   const protocolManager = new ProtocolManager();
+  const sessionStore = new SessionStore();
+  const healthMonitor = new HealthMonitor();
 
   defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
     mediaEngine.inspectRequest({ url: details.url });
@@ -204,6 +208,10 @@ function bootstrap(): void {
     unpinIpfsCid: (cid: string) => protocolManager.helia.unpin(cid),
     clearIpfsCache: () => protocolManager.storage.clearCache(),
     getIpfsStorageStats: () => protocolManager.storage.getStorageStats(),
+    saveSessionState: (state: Partial<import("@mine/contracts").SessionState>) => sessionStore.saveState(state),
+    getSessionState: () => sessionStore.getState(),
+    getSubsystemHealth: () => healthMonitor.getHealthStatus(),
+    restartSubsystemComponent: (componentId: string) => healthMonitor.restartComponent(componentId),
   });
 
   win.on("maximize", emitWindowState);

@@ -7,6 +7,8 @@ export * from "./types/media.js";
 export * from "./types/search.js";
 export * from "./types/safety.js";
 export * from "./types/protocol.js";
+export * from "./types/workspace.js";
+export * from "./types/health.js";
 export * from "./ipc/channels.js";
 export * from "./ipc/schemas.js";
 export * from "./layout/constants.js";

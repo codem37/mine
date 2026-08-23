@@ -44,6 +44,10 @@ export interface IpcDeps {
   readonly unpinIpfsCid?: (cid: string) => void;
   readonly clearIpfsCache?: () => void;
   readonly getIpfsStorageStats?: () => unknown;
+  readonly saveSessionState?: (state: Partial<import("@mine/contracts").SessionState>) => unknown;
+  readonly getSessionState?: () => unknown;
+  readonly getSubsystemHealth?: () => readonly unknown[];
+  readonly restartSubsystemComponent?: (componentId: string) => unknown;
 }
 
 export function registerIpcHandlers(
@@ -336,5 +340,29 @@ export function registerIpcHandlers(
     const payload = parsePayload(UnitRequestSchema, raw);
     if (!payload.ok) return payload;
     return { ok: true, value: deps.getIpfsStorageStats?.() ?? null } as const;
+  });
+
+  // Session & Health Handlers
+  ipcMain.handle(IPC_CHANNELS.session.save, async (_event, raw: unknown) => {
+    const state = deps.saveSessionState?.(raw as any);
+    return { ok: true, value: state } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.session.restore, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getSessionState?.() ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.health.getStatus, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getSubsystemHealth?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.health.restartComponent, async (_event, raw: unknown) => {
+    const componentId = typeof raw === "object" && raw !== null && "componentId" in raw ? (raw as any).componentId : "shell";
+    const res = deps.restartSubsystemComponent?.(componentId);
+    return { ok: true, value: res } as const;
   });
 }

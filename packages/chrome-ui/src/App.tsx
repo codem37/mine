@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { DownloadItem, MediaSource, PlayerState, SecurityVerdict, Telemetry } from "@mine/contracts";
+import type { DownloadItem, MediaSource, PlayerState, ProtocolInfoPayload, SecurityVerdict, Telemetry, Workspace } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
@@ -19,8 +19,18 @@ import { SecurityInterstitial } from "./components/SecurityInterstitial.js";
 import { LookalikeWarningToast } from "./components/LookalikeWarningToast.js";
 import { ProtocolInfoModal } from "./components/ProtocolInfoModal.js";
 import { PinStorageManagerModal } from "./components/PinStorageManagerModal.js";
+import { BrowserCenter } from "./components/BrowserCenter.js";
+import { CommandCenter } from "./components/CommandCenter.js";
+import { SettingsModal } from "./components/SettingsModal.js";
+import { WorkspaceSelector } from "./components/WorkspaceSelector.js";
+import { HealthRecoveryModal } from "./components/HealthRecoveryModal.js";
 import { useLiveStats } from "./use-live-stats.js";
-import type { ProtocolInfoPayload } from "@mine/contracts";
+
+const INITIAL_WORKSPACES: readonly Workspace[] = [
+  { id: "ws-personal", name: "Personal", icon: "🏠", accent: "cyan", tabIds: [], activeTabId: null },
+  { id: "ws-research", name: "Research", icon: "🔬", accent: "purple", tabIds: [], activeTabId: null },
+  { id: "ws-work", name: "Work", icon: "💼", accent: "green", tabIds: [], activeTabId: null },
+];
 
 export function App(): JSX.Element {
   const { tabs: liveTabs, shield } = useLiveStats();
@@ -34,6 +44,11 @@ export function App(): JSX.Element {
   const [eventsModalOpen, setEventsModalOpen] = useState(false);
   const [protocolModalOpen, setProtocolModalOpen] = useState(false);
   const [storageModalOpen, setStorageModalOpen] = useState(false);
+  const [browserCenterOpen, setBrowserCenterOpen] = useState(false);
+  const [commandCenterOpen, setCommandCenterOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [healthModalOpen, setHealthModalOpen] = useState(false);
+  const [settingsSection, setSettingsSection] = useState("general");
   const [protocolInfo, setProtocolInfo] = useState<ProtocolInfoPayload | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [fullFetcherOpen, setFullFetcherOpen] = useState(false);
@@ -42,8 +57,22 @@ export function App(): JSX.Element {
   const [securityVerdict, setSecurityVerdict] = useState<SecurityVerdict | null>(null);
   const [dismissedLookalike, setDismissedLookalike] = useState(false);
 
+  const [workspaces, setWorkspaces] = useState<readonly Workspace[]>(INITIAL_WORKSPACES);
+  const [activeWorkspaceId, setActiveWorkspaceId] = useState("ws-personal");
+
   useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
   useEffect(() => window.mine.onTelemetry(setTelemetry), []);
+
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent): void => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setCommandCenterOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -124,6 +153,32 @@ export function App(): JSX.Element {
 
   const isFetcherUrl = active?.url === "mine://fetcher/" || active?.url === "mine://downloads/";
 
+  const activeWorkspaceObj = workspaces.find((w) => w.id === activeWorkspaceId) ?? null;
+
+  const handleCommandAction = (action: string): void => {
+    setCommandCenterOpen(false);
+    if (action === "new-tab" && window.mine.newTab) {
+      void window.mine.newTab();
+    } else if (action === "close-tab" && active && window.mine.closeTab) {
+      void window.mine.closeTab({ tabId: active.id });
+    } else if (action === "open-fetcher") {
+      setFullFetcherOpen(true);
+    } else if (action === "open-media") {
+      setBubbleOpen(true);
+    } else if (action === "open-protection") {
+      setProtectionCenterOpen(true);
+    } else if (action === "open-browser-center") {
+      setBrowserCenterOpen(true);
+    } else if (action === "open-settings") {
+      setSettingsOpen(true);
+    } else if (action === "open-diagnostics") {
+      setHealthModalOpen(true);
+    } else if (action === "ipfs-settings") {
+      setSettingsSection("decentralized");
+      setSettingsOpen(true);
+    }
+  };
+
   // Trusted Full-Page Interstitial when navigation is blocked (Phishing/Malware)
   if (securityVerdict?.state === "blocked") {
     return (
@@ -202,6 +257,15 @@ export function App(): JSX.Element {
         <button
           type="button"
           className="glass-btn"
+          title="Browser Center (Ctrl+K)"
+          onClick={() => setBrowserCenterOpen(true)}
+        >
+          ❖
+        </button>
+
+        <button
+          type="button"
+          className="glass-btn"
           aria-label="main menu"
           title="Main Menu"
           onClick={() => setMenuOpen(!menuOpen)}
@@ -213,6 +277,24 @@ export function App(): JSX.Element {
       </header>
 
       <aside className="rail--tabs" aria-label="tab rail">
+        <WorkspaceSelector
+          workspaces={workspaces}
+          activeWorkspaceId={activeWorkspaceId}
+          onSelectWorkspace={setActiveWorkspaceId}
+          onCreateWorkspace={(name, icon, accent) => {
+            const newWs: Workspace = {
+              id: `ws-${Date.now()}`,
+              name,
+              icon,
+              accent,
+              tabIds: [],
+              activeTabId: null,
+            };
+            setWorkspaces((prev) => [...prev, newWs]);
+            setActiveWorkspaceId(newWs.id);
+          }}
+        />
+
         <TabStrip
           tabs={tabsPayload.tabs}
           activeTabId={tabsPayload.activeTabId}
@@ -230,6 +312,51 @@ export function App(): JSX.Element {
             }
           }}
         />
+      ) : null}
+
+      {browserCenterOpen ? (
+        <BrowserCenter
+          activeWorkspace={activeWorkspaceObj}
+          onClose={() => setBrowserCenterOpen(false)}
+          onOpenFetcher={() => {
+            setBrowserCenterOpen(false);
+            setFullFetcherOpen(true);
+          }}
+          onOpenMedia={() => {
+            setBrowserCenterOpen(false);
+            setBubbleOpen(true);
+          }}
+          onOpenProtection={() => {
+            setBrowserCenterOpen(false);
+            setProtectionCenterOpen(true);
+          }}
+          onOpenSettings={() => {
+            setBrowserCenterOpen(false);
+            setSettingsOpen(true);
+          }}
+          onOpenHealth={() => {
+            setBrowserCenterOpen(false);
+            setHealthModalOpen(true);
+          }}
+        />
+      ) : null}
+
+      {commandCenterOpen ? (
+        <CommandCenter
+          onClose={() => setCommandCenterOpen(false)}
+          onExecuteCommand={handleCommandAction}
+        />
+      ) : null}
+
+      {settingsOpen ? (
+        <SettingsModal
+          initialSection={settingsSection}
+          onClose={() => setSettingsOpen(false)}
+        />
+      ) : null}
+
+      {healthModalOpen ? (
+        <HealthRecoveryModal onClose={() => setHealthModalOpen(false)} />
       ) : null}
 
       {siteInfoOpen ? (

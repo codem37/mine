@@ -62,6 +62,18 @@ export const IPC_CHANNELS = {
     clearCache: "mine:ipfs:clear-cache",
     getStorage: "mine:ipfs:get-storage",
   },
+  session: {
+    save: "mine:session:save",
+    restore: "mine:session:restore",
+  },
+  health: {
+    getStatus: "mine:health:get-status",
+    restartComponent: "mine:health:restart-component",
+  },
+  backup: {
+    export: "mine:backup:export",
+    import: "mine:backup:import",
+  },
 } as const;
 
 export const IPC_EVENTS = {

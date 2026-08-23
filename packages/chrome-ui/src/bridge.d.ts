@@ -65,6 +65,10 @@ export interface MineBridge {
   unpinIpfsCid(payload: import("@mine/contracts").PinRequest): Promise<InvokeResult>;
   clearIpfsCache(): Promise<InvokeResult>;
   getIpfsStorageStats(): Promise<Result<import("@mine/contracts").IPFSStorageStats>>;
+  saveSessionState(state: Partial<import("@mine/contracts").SessionState>): Promise<Result<import("@mine/contracts").SessionState>>;
+  getSessionState(): Promise<Result<import("@mine/contracts").SessionState>>;
+  getSubsystemHealth(): Promise<Result<readonly import("@mine/contracts").SubsystemHealth[]>>;
+  restartSubsystemComponent(componentId: string): Promise<Result<import("@mine/contracts").SubsystemHealth>>;
 }
 
 declare global {

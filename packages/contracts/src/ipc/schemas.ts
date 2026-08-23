@@ -460,5 +460,34 @@ export const PinRequestSchema = z.object({
   cid: z.string().min(1),
 });
 
+export const WorkspaceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  icon: z.string(),
+  accent: z.string(),
+  tabIds: z.array(z.string()),
+  activeTabId: z.string().nullable(),
+});
+
+export const TabGroupSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  color: z.string(),
+  tabIds: z.array(z.string()),
+  collapsed: z.boolean(),
+});
+
+export const SubsystemHealthSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(["ready", "running", "degraded", "unavailable", "error"]),
+  details: z.string().optional(),
+  lastChecked: z.number(),
+});
+
+export const RestartComponentRequestSchema = z.object({
+  componentId: z.string().min(1),
+});
+
 
 

@@ -165,6 +165,14 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.protocol.clearCache, {}),
   getIpfsStorageStats: (): Promise<Result<import("@mine/contracts").IPFSStorageStats>> =>
     ipcRenderer.invoke(IPC_CHANNELS.protocol.getStorage, {}),
+  saveSessionState: (state: Partial<import("@mine/contracts").SessionState>): Promise<Result<import("@mine/contracts").SessionState>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.session.save, state),
+  getSessionState: (): Promise<Result<import("@mine/contracts").SessionState>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.session.restore, {}),
+  getSubsystemHealth: (): Promise<Result<readonly import("@mine/contracts").SubsystemHealth[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.health.getStatus, {}),
+  restartSubsystemComponent: (componentId: string): Promise<Result<import("@mine/contracts").SubsystemHealth>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.health.restartComponent, { componentId }),
 };
 
 export type MineBridge = typeof api;
