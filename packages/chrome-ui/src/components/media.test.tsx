@@ -25,22 +25,22 @@ function makeSource(overrides: Partial<MediaSource> = {}): MediaSource {
 }
 
 describe("MediaIndicator component", () => {
-  it("renders idle symbol ○ when sources array is empty", () => {
-    const html = renderToStaticMarkup(<MediaIndicator sources={[]} onOpenBubble={() => {}} />);
-    expect(html).toContain("○");
+  it("renders null when sources array is empty and not playing", () => {
+    const html = renderToStaticMarkup(<MediaIndicator sources={[]} onOpenPlayer={() => {}} />);
+    expect(html).toBe("");
   });
 
-  it("renders media count badge ● 2 when multiple sources are detected", () => {
+  it("renders media count badge ◉ Media (2) when multiple sources are detected", () => {
     const s1 = makeSource();
     const s2 = makeSource({ id: "media-2", title: "Second Stream" });
-    const html = renderToStaticMarkup(<MediaIndicator sources={[s1, s2]} onOpenBubble={() => {}} />);
-    expect(html).toContain("● 2");
+    const html = renderToStaticMarkup(<MediaIndicator sources={[s1, s2]} onOpenPlayer={() => {}} />);
+    expect(html).toContain("◉ Media (2)");
   });
 
-  it("renders playing symbol ▶ when media is actively playing", () => {
+  it("renders playing symbol ▶ Playing when media is actively playing", () => {
     const s1 = makeSource();
-    const html = renderToStaticMarkup(<MediaIndicator sources={[s1]} onOpenBubble={() => {}} isPlaying />);
-    expect(html).toContain("▶");
+    const html = renderToStaticMarkup(<MediaIndicator sources={[s1]} onOpenPlayer={() => {}} isPlaying />);
+    expect(html).toContain("▶ Playing");
   });
 });
 

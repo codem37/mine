@@ -66,6 +66,7 @@ export function App(): JSX.Element {
   const [detectedMediaToast, setDetectedMediaToast] = useState<MediaSource | null>(null);
   const [mediaQueueOpen, setMediaQueueOpen] = useState(false);
   const [mediaHistoryOpen, setMediaHistoryOpen] = useState(false);
+  const [addressBarFocused, setAddressBarFocused] = useState(false);
 
   const [workspaces, setWorkspaces] = useState<readonly Workspace[]>(INITIAL_WORKSPACES);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("ws-personal");
@@ -195,6 +196,7 @@ export function App(): JSX.Element {
   };
 
   const isAnyOverlayOpen = Boolean(
+    addressBarFocused ||
     siteInfoOpen ||
     protectionCenterOpen ||
     eventsModalOpen ||
@@ -278,12 +280,19 @@ export function App(): JSX.Element {
               });
             }
           }}
+          onFocusChange={(focused) => setAddressBarFocused(focused)}
         />
 
         <MediaIndicator
           sources={mediaSources}
           isPlaying={playerState?.status === "playing"}
-          onOpenBubble={() => setBubbleOpen(true)}
+          onOpenPlayer={() => {
+            if (mediaSources.length > 0) {
+              setActivePlayerSource(mediaSources[mediaSources.length - 1] ?? mediaSources[0]);
+            } else {
+              setBubbleOpen(true);
+            }
+          }}
         />
 
         <NetworkSpeedIndicator

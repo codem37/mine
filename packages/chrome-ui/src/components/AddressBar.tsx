@@ -11,6 +11,7 @@ interface Props {
   readonly shield: ShieldStats | null;
   readonly onToggleSiteInfo?: () => void;
   readonly onOpenProtocolInfo?: () => void;
+  readonly onFocusChange?: (focused: boolean) => void;
 }
 
 function ShieldGlyph(): JSX.Element {
@@ -33,7 +34,7 @@ function ShieldGlyph(): JSX.Element {
   );
 }
 
-export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo, onOpenProtocolInfo }: Props): JSX.Element {
+export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo, onOpenProtocolInfo, onFocusChange }: Props): JSX.Element {
   const [value, setValue] = useState(activeUrl);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const focused = useRef(false);
@@ -66,6 +67,7 @@ export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo, o
       : `https://duckduckgo.com/?q=${encodeURIComponent(raw)}`;
 
     setShowSuggestions(false);
+    onFocusChange?.(false);
     void window.mine.navigate({ tabId: activeTabId, url }).then((result) => {
       if (!result.ok) console.error(result.error.message);
     });
@@ -106,17 +108,20 @@ export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo, o
         onFocus={() => {
           focused.current = true;
           setShowSuggestions(true);
+          onFocusChange?.(true);
         }}
         onBlur={() => {
           setTimeout(() => {
             focused.current = false;
             setShowSuggestions(false);
+            onFocusChange?.(false);
             setValue(activeUrl);
           }, 200);
         }}
         onChange={(e) => {
           setValue(e.target.value);
           setShowSuggestions(true);
+          onFocusChange?.(true);
         }}
       />
 
