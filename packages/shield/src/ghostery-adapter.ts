@@ -126,8 +126,9 @@ export class GhosteryAdapter implements NativeEngineLike {
       // styles is a CSS string like ".ad-banner, .tracker { display: none !important; }"
       // Extract selectors for caller to re-inject in controlled form
       const match = styles.match(/^(.+?)\s*\{\s*display:\s*none/ms);
-      if (!match) return [styles];
-      return match[1]
+      const selectorGroup = match?.[1];
+      if (!selectorGroup) return [styles];
+      return selectorGroup
         .split(",")
         .map((s) => s.trim())
         .filter(Boolean);
