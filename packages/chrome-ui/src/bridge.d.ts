@@ -49,6 +49,7 @@ export interface MineBridge {
   getDetectedStreams(): Promise<Result<readonly import("@mine/contracts").MediaStream[]>>;
   playNativeMedia(payload: import("@mine/contracts").PlayNativeRequest): Promise<InvokeResult>;
   onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaStream[]) => void): () => void;
+  search(payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>>;
 }
 
 declare global {

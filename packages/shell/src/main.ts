@@ -7,6 +7,7 @@ import { ShieldStatsSchema, WindowStateSchema } from "@mine/contracts";
 import { stripTrackingParams } from "@mine/shield";
 import { DownloadEngine } from "@mine/fetcher";
 import { MediaEngine } from "@mine/media";
+import { SearchEngine } from "@mine/search";
 import { TabManager } from "./tab-manager.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
@@ -129,6 +130,8 @@ function bootstrap(): void {
     broadcast(IPC_EVENTS.media.streamDetected, streams);
   });
 
+  const searchEngine = new SearchEngine();
+
   defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
     mediaEngine.inspectRequest({ url: details.url });
     callback({});
@@ -175,6 +178,8 @@ function bootstrap(): void {
         mediaEngine.playNative(param1, { title: typeof param2 === "string" ? param2 : undefined });
       }
     },
+    onSearchQuery: (query: string, category?: string, page?: number) =>
+      searchEngine.search({ query, category, page }),
   });
 
   win.on("maximize", emitWindowState);

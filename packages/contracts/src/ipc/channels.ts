@@ -34,6 +34,9 @@ export const IPC_CHANNELS = {
     playNative: "mine:media:play-native",
     getDetectedStreams: "mine:media:get-detected-streams",
   },
+  search: {
+    query: "mine:search:query",
+  },
 } as const;
 
 export const IPC_EVENTS = {

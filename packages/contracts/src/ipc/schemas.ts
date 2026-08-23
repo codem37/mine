@@ -180,5 +180,37 @@ export const PlayNativeRequestSchema: z.ZodType<PlayNativeRequest> = z.object({
   title: z.string().optional(),
 });
 
+export type { SearchRequest, SearchResponse, SearchResult, SearchFacet } from "../types/search.js";
+
+export const SearchRequestSchema = z.object({
+  query: z.string().min(1),
+  category: z.string().optional(),
+  page: z.number().min(1).optional(),
+});
+
+export const SearchResultSchema = z.object({
+  id: z.string().min(1),
+  url: z.string().min(1),
+  title: z.string().min(1),
+  snippet: z.string(),
+  engine: z.string(),
+  score: z.number(),
+  category: z.string().optional(),
+  publishedDate: z.string().optional(),
+});
+
+export const SearchFacetSchema = z.object({
+  name: z.string().min(1),
+  count: z.number().min(0),
+});
+
+export const SearchResponseSchema = z.object({
+  query: z.string(),
+  results: z.array(SearchResultSchema),
+  facets: z.array(SearchFacetSchema),
+  totalResults: z.number().min(0),
+  timeMs: z.number().min(0),
+});
+
 
 

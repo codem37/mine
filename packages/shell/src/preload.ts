@@ -126,6 +126,8 @@ const api = {
       ipcRenderer.removeListener(IPC_EVENTS.media.streamDetected, listener);
     };
   },
+  search: (payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.search.query, payload),
 };
 
 export type MineBridge = typeof api;

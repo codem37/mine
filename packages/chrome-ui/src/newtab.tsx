@@ -20,17 +20,6 @@ interface DashNode {
   readonly action?: () => void;
 }
 
-const LIVE_NODES: readonly DashNode[] = [
-  { label: "new tab", hint: "opens a fresh tab", action: (): void => { void window.mine.newTab(); } },
-];
-
-const FUTURE_NODES: readonly DashNode[] = [
-  { label: "downloads" },
-  { label: "search" },
-  { label: "safety" },
-  { label: "ipfs" },
-];
-
 function LiveStatsStrip(): JSX.Element {
   const { tabs, shield } = useLiveStats();
   const active =
@@ -103,7 +92,27 @@ function CenterSearch(): JSX.Element {
 }
 
 export function NewTabDashboard(): JSX.Element {
+  const { tabs } = useLiveStats();
+  const activeTabId = tabs?.activeTabId ?? null;
+
+  const LIVE_NODES: readonly DashNode[] = [
+    { label: "new tab", hint: "opens a fresh tab", action: (): void => { void window.mine.newTab(); } },
+    {
+      label: "downloads",
+      hint: "open download manager",
+      action: (): void => {
+        if (activeTabId) void window.mine.navigate({ tabId: activeTabId, url: "mine://fetcher" });
+      },
+    },
+  ];
+
+  const FUTURE_NODES: readonly DashNode[] = [
+    { label: "safety" },
+    { label: "ipfs" },
+  ];
+
   const all = [...LIVE_NODES, ...FUTURE_NODES];
+
   return (
     <main className="dash">
       <AtmosphericParticles />
