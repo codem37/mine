@@ -123,6 +123,7 @@
 
 .dash-glass-search {
   position: relative;
+  z-index: 50;
   width: 100%;
   display: flex;
   align-items: center;
@@ -152,6 +153,7 @@
 
 .search-engine-selector {
   position: relative;
+  z-index: 100;
 }
 
 .search-engine-btn {
@@ -192,7 +194,7 @@
   position: absolute;
   top: 44px;
   left: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .search-engine-dropdown__card {
