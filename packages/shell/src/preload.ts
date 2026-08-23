@@ -96,6 +96,14 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.fetcher.openFile, payload),
   showDownloadInFolder: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.fetcher.showInFolder, payload),
+  addDownload: (payload: import("@mine/contracts").AddDownloadRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.addDownload, payload),
+  removeDownload: (payload: import("@mine/contracts").DownloadIdRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.removeDownload, payload),
+  deleteFile: (payload: import("@mine/contracts").DeleteFileRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.deleteFile, payload),
+  getStorageInfo: (): Promise<Result<import("@mine/contracts").StorageInfo>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.fetcher.getStorageInfo, {}),
   onDownloadsUpdated: (callback: (payload: import("@mine/contracts").DownloadsUpdatedPayload) => void): (() => void) => {
     const listener = (_event: unknown, payload: import("@mine/contracts").DownloadsUpdatedPayload): void => {
       callback(payload);

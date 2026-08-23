@@ -96,6 +96,25 @@ export class DownloadEngine {
     await this.downloads.get(id)?.retry();
   }
 
+  async removeDownload(id: string, deleteFromDisk = false): Promise<void> {
+    const item = this.downloads.get(id);
+    if (!item) return;
+    item.cancel();
+    if (deleteFromDisk) {
+      const snap = item.getSnapshot();
+      if (snap.savePath) {
+        try {
+          const { unlink } = await import("node:fs/promises");
+          await unlink(snap.savePath);
+        } catch {
+          // ignore unlink error
+        }
+      }
+    }
+    this.downloads.delete(id);
+    this.notify();
+  }
+
   dispose(): void {
     for (const d of this.downloads.values()) {
       d.cancel();

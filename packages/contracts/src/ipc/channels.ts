@@ -25,6 +25,10 @@ export const IPC_CHANNELS = {
     retryDownload: "mine:fetcher:retry-download",
     openFile: "mine:fetcher:open-file",
     showInFolder: "mine:fetcher:show-in-folder",
+    addDownload: "mine:fetcher:add-download",
+    removeDownload: "mine:fetcher:remove-download",
+    deleteFile: "mine:fetcher:delete-file",
+    getStorageInfo: "mine:fetcher:get-storage-info",
   },
 } as const;
 

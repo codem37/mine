@@ -41,6 +41,10 @@ export interface MineBridge {
   retryDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
   openDownloadFile(payload: DownloadIdRequest): Promise<InvokeResult>;
   showDownloadInFolder(payload: DownloadIdRequest): Promise<InvokeResult>;
+  addDownload(payload: import("@mine/contracts").AddDownloadRequest): Promise<InvokeResult>;
+  removeDownload(payload: DownloadIdRequest): Promise<InvokeResult>;
+  deleteFile(payload: import("@mine/contracts").DeleteFileRequest): Promise<InvokeResult>;
+  getStorageInfo(): Promise<Result<import("@mine/contracts").StorageInfo>>;
   onDownloadsUpdated(cb: (payload: DownloadsUpdatedPayload) => void): () => void;
 }
 

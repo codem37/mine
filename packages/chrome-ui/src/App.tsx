@@ -9,6 +9,7 @@ import { NetworkSpeedIndicator } from "./components/NetworkSpeedIndicator.js";
 import { SiteInfoPopup } from "./components/SiteInfoPopup.js";
 import { MainMenu } from "./components/MainMenu.js";
 import { DownloadSystem } from "./components/DownloadSystem.js";
+import { FetcherPage } from "./components/FetcherPage.js";
 import { useLiveStats } from "./use-live-stats.js";
 
 export function App(): JSX.Element {
@@ -18,7 +19,7 @@ export function App(): JSX.Element {
   const [downloads, setDownloads] = useState<readonly DownloadItem[]>([]);
   const [siteInfoOpen, setSiteInfoOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [downloadsDrawerOpen, setDownloadsDrawerOpen] = useState(false);
+  const [fullFetcherOpen, setFullFetcherOpen] = useState(false);
 
   useEffect(() => window.mine.onWindowState((state) => setMaximized(state.maximized)), []);
   useEffect(() => window.mine.onTelemetry(setTelemetry), []);
@@ -47,6 +48,17 @@ export function App(): JSX.Element {
   const tabsPayload = liveTabs ?? { tabs: [], activeTabId: null };
   const active =
     tabsPayload.tabs.find((t) => t.id === tabsPayload.activeTabId) ?? null;
+
+  const isFetcherUrl = active?.url === "mine://fetcher/" || active?.url === "mine://downloads/";
+
+  if (fullFetcherOpen || isFetcherUrl) {
+    return (
+      <FetcherPage
+        downloads={downloads}
+        onClose={() => setFullFetcherOpen(false)}
+      />
+    );
+  }
 
   return (
     <div className="hud">
@@ -95,14 +107,13 @@ export function App(): JSX.Element {
       {menuOpen ? (
         <MainMenu
           onClose={() => setMenuOpen(false)}
-          onOpenDownloads={() => setDownloadsDrawerOpen(true)}
+          onOpenDownloads={() => setFullFetcherOpen(true)}
         />
       ) : null}
 
       <DownloadSystem
         downloads={downloads}
-        showFullList={downloadsDrawerOpen}
-        onCloseList={() => setDownloadsDrawerOpen(false)}
+        onOpenFullFetcher={() => setFullFetcherOpen(true)}
       />
     </div>
   );

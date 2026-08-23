@@ -142,16 +142,19 @@ function bootstrap(): void {
     currentShieldStats,
     setShieldEnabled,
     currentDownloads: () => downloadEngine.getDownloads(),
-    onDownloadAction: (action, id) => {
-      if (action === "pause") downloadEngine.pause(id);
-      else if (action === "resume") void downloadEngine.resume(id);
-      else if (action === "cancel") downloadEngine.cancel(id);
-      else if (action === "retry") void downloadEngine.retry(id);
+    onDownloadAction: (action: string, param1: string, param2?: unknown) => {
+      if (action === "pause") downloadEngine.pause(param1);
+      else if (action === "resume") void downloadEngine.resume(param1);
+      else if (action === "cancel") downloadEngine.cancel(param1);
+      else if (action === "retry") void downloadEngine.retry(param1);
+      else if (action === "add") void downloadEngine.startDownload(param1, { saveDir: typeof param2 === "string" ? param2 : undefined });
+      else if (action === "remove") void downloadEngine.removeDownload(param1, false);
+      else if (action === "deleteFile") void downloadEngine.removeDownload(param1, Boolean(param2));
       else if (action === "openFile") {
-        const item = downloadEngine.getDownload(id);
+        const item = downloadEngine.getDownload(param1);
         if (item?.savePath) void shell.openPath(item.savePath);
       } else if (action === "showInFolder") {
-        const item = downloadEngine.getDownload(id);
+        const item = downloadEngine.getDownload(param1);
         if (item?.savePath) shell.showItemInFolder(item.savePath);
       }
     },

@@ -1,5 +1,7 @@
 import { ipcMain } from "electron";
 import {
+  AddDownloadRequestSchema,
+  DeleteFileRequestSchema,
   DownloadIdRequestSchema,
   IPC_CHANNELS,
   NavigateRequestSchema,
@@ -17,7 +19,7 @@ export interface IpcDeps {
   readonly currentShieldStats: () => unknown;
   readonly setShieldEnabled: (enabled: boolean) => void;
   readonly currentDownloads?: () => unknown[];
-  readonly onDownloadAction?: (action: string, id: string) => void;
+  readonly onDownloadAction?: (action: string, param1: string, param2?: unknown) => void;
 }
 
 export function registerIpcHandlers(
@@ -153,6 +155,27 @@ export function registerIpcHandlers(
     const payload = parsePayload(DownloadIdRequestSchema, raw);
     if (!payload.ok) return payload;
     deps.onDownloadAction?.("retry", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.addDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(AddDownloadRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("add", payload.value.url, payload.value.savePath);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.removeDownload, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("remove", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.deleteFile, async (_event, raw: unknown) => {
+    const payload = parsePayload(DeleteFileRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("deleteFile", payload.value.downloadId, payload.value.deleteFromDisk);
     return { ok: true, value: null } as const;
   });
 

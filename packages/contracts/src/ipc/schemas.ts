@@ -133,6 +133,28 @@ export const DownloadIdRequestSchema = z.object({
 
 export type DownloadIdRequest = z.infer<typeof DownloadIdRequestSchema>;
 
+export const AddDownloadRequestSchema = z.object({
+  url: z.string().min(1),
+  savePath: z.string().optional(),
+});
+
+export type AddDownloadRequest = z.infer<typeof AddDownloadRequestSchema>;
+
+export const DeleteFileRequestSchema = z.object({
+  downloadId: z.string().min(1),
+  deleteFromDisk: z.boolean().default(false),
+});
+
+export type DeleteFileRequest = z.infer<typeof DeleteFileRequestSchema>;
+
+export const StorageInfoSchema = z.object({
+  usedBytes: z.number().min(0),
+  freeBytes: z.number().min(0),
+});
+
+export type StorageInfo = z.infer<typeof StorageInfoSchema>;
+
 export const DownloadsUpdatedPayloadSchema = z.array(DownloadItemSchema);
 export type DownloadsUpdatedPayload = readonly DownloadItem[];
+
 

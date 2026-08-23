@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { DownloadItem, DownloadSegment } from "@mine/contracts";
 import type { JSX } from "react";
+import { FileIcon } from "./FileIcon.js";
 
 interface Props {
   readonly downloads: readonly DownloadItem[];
-  readonly onCloseList?: () => void;
-  readonly showFullList?: boolean;
+  readonly onOpenFullFetcher?: () => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -29,7 +29,6 @@ function formatEta(seconds: number | null): string {
   return `${s}s remaining`;
 }
 
-// Default mock segments generator if segments empty
 function defaultSegments(percent: number): DownloadSegment[] {
   const segments: DownloadSegment[] = [];
   const count = 8;
@@ -40,8 +39,8 @@ function defaultSegments(percent: number): DownloadSegment[] {
   return segments;
 }
 
-export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.Element {
-  const [expandedSegments, setExpandedSegments] = useState(true);
+export function DownloadBubbleItem({ item, onUndoCancel }: { readonly item: DownloadItem; readonly onUndoCancel?: (item: DownloadItem) => void }): JSX.Element {
+  const [showSegments, setShowSegments] = useState(false);
   const percent = item.totalBytes > 0 
     ? Math.round((item.downloadedBytes / item.totalBytes) * 100) 
     : 0;
@@ -56,6 +55,7 @@ export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.E
   };
   const handleCancel = (): void => {
     void window.mine.cancelDownload({ downloadId: item.id });
+    onUndoCancel?.(item);
   };
   const handleRetry = (): void => {
     void window.mine.retryDownload({ downloadId: item.id });
@@ -63,12 +63,20 @@ export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.E
   const handleOpen = (): void => {
     void window.mine.openDownloadFile({ downloadId: item.id });
   };
+  const handleShowInFolder = (): void => {
+    void window.mine.showDownloadInFolder({ downloadId: item.id });
+  };
+  const handleRemove = (): void => {
+    if (window.mine.removeDownload) {
+      void window.mine.removeDownload({ downloadId: item.id });
+    }
+  };
 
   return (
     <div className="download-bubble" data-testid="download-bubble">
       <div className="download-bubble__header">
         <div className="download-bubble__title-row">
-          <span className="download-bubble__icon">↓</span>
+          <FileIcon filename={item.filename} isTorrent={item.isTorrent} />
           <span className="download-bubble__name" title={item.filename}>{item.filename}</span>
           <span className="download-bubble__percent">{percent}%</span>
         </div>
@@ -86,32 +94,32 @@ export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.E
         <div className="download-bubble__progress-fill" style={{ width: `${percent}%` }} />
       </div>
 
-      {/* Segmented 8-Thread Visualization */}
-      <div className="download-bubble__segments-container">
+      {/* Toggle Connection Segment Visualizer */}
+      {item.state === "downloading" ? (
         <button
           type="button"
           className="download-bubble__segments-toggle"
-          onClick={() => setExpandedSegments(!expandedSegments)}
+          onClick={() => setShowSegments(!showSegments)}
         >
-          <span>Multi-thread connection status (8 segments)</span>
-          <span>{expandedSegments ? "▲" : "▼"}</span>
+          <span>Connections ({segments.length})</span>
+          <span>{showSegments ? "▲" : "▼"}</span>
         </button>
+      ) : null}
 
-        {expandedSegments ? (
-          <div className="download-bubble__segments-grid">
-            {segments.map((seg) => (
-              <div key={seg.id} className="download-segment">
-                <div
-                  className={`download-segment__bar ${seg.active ? "download-segment__bar--active" : ""}`}
-                  style={{ width: `${seg.progressPercent}%` }}
-                />
-              </div>
-            ))}
-          </div>
-        ) : null}
-      </div>
+      {showSegments && item.state === "downloading" ? (
+        <div className="download-bubble__segments-grid">
+          {segments.map((seg) => (
+            <div key={seg.id} className="download-segment" title={`Seg ${seg.id + 1}: ${seg.progressPercent}%`}>
+              <div
+                className={`download-segment__bar ${seg.active ? "download-segment__bar--active" : ""}`}
+                style={{ width: `${seg.progressPercent}%` }}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
 
-      {/* Action Buttons */}
+      {/* Contextual Action Buttons */}
       <div className="download-bubble__actions">
         {item.state === "downloading" || item.state === "resuming" ? (
           <button type="button" className="glass-btn glass-btn--sm" onClick={handlePause}>
@@ -132,12 +140,23 @@ export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.E
         ) : null}
 
         {item.state === "completed" ? (
-          <button type="button" className="glass-btn glass-btn--sm glass-btn--primary" onClick={handleOpen}>
-            Open File
+          <>
+            <button type="button" className="glass-btn glass-btn--sm glass-btn--primary" onClick={handleOpen}>
+              Open
+            </button>
+            <button type="button" className="glass-btn glass-btn--sm" onClick={handleShowInFolder}>
+              Folder
+            </button>
+          </>
+        ) : null}
+
+        {item.state === "completed" || item.state === "failed" || item.state === "cancelled" ? (
+          <button type="button" className="glass-btn glass-btn--sm" onClick={handleRemove}>
+            Remove
           </button>
         ) : null}
 
-        {item.state !== "completed" ? (
+        {item.state === "downloading" || item.state === "paused" || item.state === "resuming" ? (
           <button type="button" className="glass-btn glass-btn--sm glass-btn--danger" onClick={handleCancel}>
             Cancel
           </button>
@@ -147,40 +166,113 @@ export function DownloadBubble({ item }: { readonly item: DownloadItem }): JSX.E
   );
 }
 
-export function DownloadSystem({ downloads, onCloseList, showFullList = false }: Props): JSX.Element | null {
-  const activeDownloads = downloads.filter((d) => d.state === "downloading" || d.state === "resuming" || d.state === "paused");
-  const latestActive = activeDownloads[0] ?? downloads[0] ?? null;
+export function DownloadSystem({ downloads, onOpenFullFetcher }: Props): JSX.Element | null {
+  const [expanded, setExpanded] = useState(false);
+  const [lastCancelledItem, setLastCancelledItem] = useState<DownloadItem | null>(null);
+  const undoTimeoutRef = useRef<number | null>(null);
 
-  if (showFullList) {
+  const active = downloads.filter((d) => d.state === "downloading" || d.state === "resuming" || d.state === "paused");
+  const completed = downloads.filter((d) => d.state === "completed");
+  const totalSpeed = active.reduce((acc, d) => acc + d.speedBytesPerSec, 0);
+
+  const handleCancelWithUndo = (item: DownloadItem): void => {
+    setLastCancelledItem(item);
+    if (undoTimeoutRef.current) clearTimeout(undoTimeoutRef.current);
+    undoTimeoutRef.current = setTimeout(() => {
+      setLastCancelledItem(null);
+    }, 6000) as unknown as number;
+  };
+
+  const handleUndo = (): void => {
+    if (lastCancelledItem) {
+      void window.mine.retryDownload({ downloadId: lastCancelledItem.id });
+      setLastCancelledItem(null);
+    }
+  };
+
+  if (downloads.length === 0 && !lastCancelledItem) return null;
+
+  // Level 1 — Single Download Active
+  if (active.length === 1 && !expanded) {
     return (
-      <div className="downloads-drawer-overlay" onClick={onCloseList} data-testid="downloads-overlay">
-        <div className="downloads-drawer" onClick={(e) => e.stopPropagation()}>
-          <header className="downloads-drawer__header">
-            <h3>Downloads</h3>
-            <button type="button" className="glass-btn" onClick={onCloseList}>✕</button>
-          </header>
+      <div className="download-system-floating">
+        {lastCancelledItem ? (
+          <div className="download-undo-toast">
+            <span>Download cancelled</span>
+            <button type="button" className="glass-btn glass-btn--sm glass-btn--primary" onClick={handleUndo}>
+              Undo
+            </button>
+          </div>
+        ) : null}
+        <DownloadBubbleItem item={active[0]!} onUndoCancel={handleCancelWithUndo} />
+      </div>
+    );
+  }
 
-          <div className="downloads-drawer__list">
-            {downloads.length === 0 ? (
-              <p className="downloads-drawer__empty">No downloads yet</p>
-            ) : (
-              downloads.map((item) => (
-                <div key={item.id} className="downloads-drawer__item">
-                  <DownloadBubble item={item} />
-                </div>
-              ))
-            )}
+  // Level 1 — Multiple Downloads Combined Summary Bubble
+  if (!expanded && (active.length > 1 || downloads.length > 0)) {
+    return (
+      <div className="download-system-floating">
+        {lastCancelledItem ? (
+          <div className="download-undo-toast">
+            <span>Download cancelled</span>
+            <button type="button" className="glass-btn glass-btn--sm glass-btn--primary" onClick={handleUndo}>
+              Undo
+            </button>
+          </div>
+        ) : null}
+
+        <div className="download-summary-bubble" onClick={() => setExpanded(true)}>
+          <div className="download-summary__title">
+            <span className="download-summary__icon">↓</span>
+            <span>{active.length > 0 ? `${active.length} active downloads` : `${downloads.length} downloads`}</span>
+            {totalSpeed > 0 ? <span className="download-summary__speed">{formatSpeed(totalSpeed)}</span> : null}
+          </div>
+          <div className="download-summary__sub">
+            {active.length} active • {completed.length} completed
           </div>
         </div>
       </div>
     );
   }
 
-  if (latestActive === null) return null;
-
+  // Level 1 — Expanded Upward Stack
   return (
     <div className="download-system-floating">
-      <DownloadBubble item={latestActive} />
+      {lastCancelledItem ? (
+        <div className="download-undo-toast">
+          <span>Download cancelled</span>
+          <button type="button" className="glass-btn glass-btn--sm glass-btn--primary" onClick={handleUndo}>
+            Undo
+          </button>
+        </div>
+      ) : null}
+
+      <div className="download-expanded-stack">
+        <header className="download-stack__header">
+          <span>Downloads</span>
+          <button type="button" className="glass-btn glass-btn--sm" onClick={() => setExpanded(false)}>✕</button>
+        </header>
+
+        <div className="download-stack__list">
+          {downloads.slice(0, 5).map((item) => (
+            <DownloadBubbleItem key={item.id} item={item} onUndoCancel={handleCancelWithUndo} />
+          ))}
+        </div>
+
+        <footer className="download-stack__footer">
+          <button
+            type="button"
+            className="glass-btn glass-btn--sm glass-btn--primary"
+            onClick={() => {
+              setExpanded(false);
+              onOpenFullFetcher?.();
+            }}
+          >
+            Open Fetcher ↗
+          </button>
+        </footer>
+      </div>
     </div>
   );
 }
