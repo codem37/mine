@@ -18,6 +18,18 @@ const ADS_PATTERNS = [
   /pixel/i,
   /analytics/i,
   /telemetry/i,
+  /favicon/i,
+];
+
+const MEDIA_URL_PATTERNS = [
+  /googlevideo\.com\/videoplayback/i,
+  /vimeo\.com/i,
+  /tiktokcdn\.com/i,
+  /fbcdn\.net/i,
+  /twimg\.com/i,
+  /mime=video/i,
+  /mime=audio/i,
+  /\.(mp4|webm|ogv|mov|m4v|mkv|flv|mp3|flac|aac|ogg|wav|m4a)($|\?)/i,
 ];
 
 export interface SniffRequest {
@@ -54,14 +66,19 @@ export function sniffMediaStream(req: SniffRequest): MediaSource | null {
 
   let format: MediaFormat | null = null;
 
-  if (lowerUrl.includes(".m3u8") || mime.includes("application/x-mpegurl") || mime.includes("application/vnd.apple.mpegurl")) {
+  if (
+    lowerUrl.includes(".m3u8") ||
+    mime.includes("application/x-mpegurl") ||
+    mime.includes("application/vnd.apple.mpegurl")
+  ) {
     format = "hls";
   } else if (lowerUrl.includes(".mpd") || mime.includes("application/dash+xml")) {
     format = "dash";
   } else if (
-    lowerUrl.match(/\.(mp4|webm|ogv|mov|mp3|flac|aac|ogg)($|\?)/i) ||
     mime.startsWith("video/") ||
-    mime.startsWith("audio/")
+    mime.startsWith("audio/") ||
+    MEDIA_URL_PATTERNS.some((p) => p.test(url)) ||
+    lowerUrl.startsWith("blob:")
   ) {
     format = "direct";
   }
@@ -107,10 +124,12 @@ function hashString(str: string): number {
 
 function extractTitleFromUrl(urlString: string): string {
   try {
-    const pathname = new URL(urlString).pathname;
-    const name = pathname.split("/").pop() ?? "media stream";
-    return decodeURIComponent(name);
+    const parsed = new URL(urlString);
+    const pathname = parsed.pathname;
+    const name = pathname.split("/").filter(Boolean).pop() ?? parsed.hostname;
+    if (name.length > 2) return decodeURIComponent(name);
+    return `${parsed.hostname} Video Stream`;
   } catch {
-    return "media stream";
+    return "Media Stream";
   }
 }

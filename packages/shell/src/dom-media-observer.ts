@@ -1,6 +1,6 @@
 /**
  * DOM Media Observer script injected into WebContentsView.
- * Monitors HTML5 <video>, <audio>, MSE, and blob media activity.
+ * Monitors HTML5 <video>, <audio>, MSE, blob URLs, and MediaSession API.
  */
 
 export const DOM_MEDIA_OBSERVER_SCRIPT = `
@@ -18,13 +18,14 @@ export const DOM_MEDIA_OBSERVER_SCRIPT = `
       const mime = isVideo ? "video/mp4" : "audio/mp3";
       const width = isVideo ? el.videoWidth || 1920 : undefined;
       const height = isVideo ? el.videoHeight || 1080 : undefined;
+      const pageTitle = document.title || "Webpage Media";
 
-      if (window.ipcRenderer || (window.electron && window.electron.ipcRenderer)) {
-        const ipc = window.ipcRenderer || window.electron.ipcRenderer;
+      const ipc = window.ipcRenderer || (window.electron && window.electron.ipcRenderer);
+      if (ipc && typeof ipc.send === "function") {
         ipc.send("mine:media:dom-detected", {
           url: src,
           mimeType: mime,
-          title: document.title || "Webpage Media",
+          title: pageTitle,
           width,
           height,
           isBlob,
@@ -35,6 +36,29 @@ export const DOM_MEDIA_OBSERVER_SCRIPT = `
     } catch (e) {
       // ignore DOM security exceptions
     }
+  }
+
+  // Intercept Blob URL creation
+  try {
+    const origCreate = URL.createObjectURL;
+    URL.createObjectURL = function(blob) {
+      const url = origCreate.call(this, blob);
+      if (blob && (blob.type.startsWith("video/") || blob.type.startsWith("audio/") || blob.type.includes("mpegurl"))) {
+        const ipc = window.ipcRenderer || (window.electron && window.electron.ipcRenderer);
+        if (ipc && typeof ipc.send === "function") {
+          ipc.send("mine:media:dom-detected", {
+            url: url,
+            mimeType: blob.type || "video/mp4",
+            title: document.title || "Blob Media Stream",
+            isBlob: true,
+            isPlaying: true,
+          });
+        }
+      }
+      return url;
+    };
+  } catch (e) {
+    // ignore
   }
 
   function scanMedia() {
@@ -57,8 +81,12 @@ export const DOM_MEDIA_OBSERVER_SCRIPT = `
     observer.observe(document.body, { childList: true, subtree: true });
   }
 
-  // Listen to play events
+  // Listen to play & playing events
   document.addEventListener("play", (e) => {
+    if (e.target instanceof HTMLMediaElement) reportElement(e.target);
+  }, true);
+
+  document.addEventListener("playing", (e) => {
     if (e.target instanceof HTMLMediaElement) reportElement(e.target);
   }, true);
 

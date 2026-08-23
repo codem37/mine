@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from "electron";
+import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
@@ -143,6 +143,12 @@ function bootstrap(): void {
   const sessionStore = new SessionStore();
   const healthMonitor = new HealthMonitor();
 
+  ipcMain.on("mine:media:dom-detected", (_event, payload: unknown) => {
+    if (payload && typeof payload === "object" && "url" in payload && typeof (payload as { url: unknown }).url === "string") {
+      mediaEngine.inspectRequest(payload as import("@mine/media").SniffRequest);
+    }
+  });
+
   defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
     mediaEngine.inspectRequest({ url: details.url });
     const verdict = safetyEngine.evaluateUrl(details.url);
@@ -151,6 +157,22 @@ function bootstrap(): void {
       return;
     }
     callback({});
+  });
+
+  defaultSession().webRequest.onHeadersReceived({ urls: ["<all_urls>"] }, (details, callback) => {
+    const headers = details.responseHeaders || {};
+    const getHeader = (name: string) => {
+      const k = Object.keys(headers).find((key) => key.toLowerCase() === name.toLowerCase());
+      return k ? headers[k]?.[0] : undefined;
+    };
+    const mimeType = getHeader("content-type");
+    if (mimeType) {
+      mediaEngine.inspectRequest({
+        url: details.url,
+        mimeType,
+      });
+    }
+    callback({ responseHeaders: details.responseHeaders });
   });
 
   defaultSession().on("will-download", (_event, item) => {

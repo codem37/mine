@@ -15,6 +15,7 @@ import type {
 import { contentBounds } from "./core/bounds.js";
 import { toLoadState, type TabEventName } from "./core/load-state.js";
 import { sessionForPartitionName, defaultSession } from "./sessions.js";
+import { DOM_MEDIA_OBSERVER_SCRIPT } from "./dom-media-observer.js";
 
 export const NEW_TAB_URL = "mine://newtab/";
 const ALLOWED_SCHEMES = new Set(["http:", "https:", "mine:"]);
@@ -275,6 +276,13 @@ export class TabManager {
 
   private bindEvents(tab: InternalTab): void {
     const wc = tab.view.webContents;
+    const injectMediaObserver = () => {
+      try {
+        void wc.executeJavaScript(DOM_MEDIA_OBSERVER_SCRIPT);
+      } catch {
+        // ignore
+      }
+    };
     const set = (event: TabEventName, errorCode?: number) => {
       tab.loadState = toLoadState(event);
       if (errorCode === undefined) {
@@ -289,9 +297,18 @@ export class TabManager {
       set("navigate");
       this.pushHistory(url, wc.getTitle());
     });
-    wc.on("did-navigate-in-page", () => set("in-page"));
-    wc.on("dom-ready", () => set("dom-ready"));
-    wc.on("did-finish-load", () => set("finish"));
+    wc.on("did-navigate-in-page", () => {
+      set("in-page");
+      injectMediaObserver();
+    });
+    wc.on("dom-ready", () => {
+      set("dom-ready");
+      injectMediaObserver();
+    });
+    wc.on("did-finish-load", () => {
+      set("finish");
+      injectMediaObserver();
+    });
     wc.on("did-fail-load", (_e, errorCode, _desc, _validatedURL, isMainFrame) => {
       if (isMainFrame && errorCode !== undefined && errorCode !== -3) {
         set("fail", errorCode);
