@@ -14,6 +14,11 @@
   --hud-chamfer: 10px;
   --hud-stroke: 1px;
 
+  --hud-glass-bg: rgba(16, 24, 32, 0.72);
+  --hud-glass-line: rgba(77, 216, 230, 0.28);
+  --hud-bevel-light: rgba(215, 229, 234, 0.16);
+  --hud-bevel-dark: rgba(0, 0, 0, 0.55);
+
   --hud-dur-fast: 120ms;
   --hud-dur-move: 180ms;
   --hud-dur-max: 200ms;

@@ -40,6 +40,7 @@
   align-items: stretch;
   gap: 4px;
   overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
 }
 
@@ -100,7 +101,42 @@
 
 .navcontrols {
   display: flex;
-  gap: 2px;
+  gap: 4px;
+}
+
+/* Three-layer skeuomorphic orb: outer rim light, gradient face, glyph. */
+.orb {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 50%;
+  border-color: var(--hud-line);
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      var(--hud-surface-raised),
+      var(--hud-bg) 78%
+    );
+  box-shadow:
+    inset 0 1px 0 var(--hud-bevel-light),
+    inset 0 -2px 3px var(--hud-bevel-dark),
+    0 0 0 1px rgba(0, 0, 0, 0.35);
+}
+
+.orb:active {
+  transform: translateY(1px);
+}
+
+.orb:disabled {
+  opacity: 0.35;
+}
+
+.orb:disabled:hover {
+  transform: none;
+}
+
+.navcontrols .orb {
+  color: var(--hud-text);
 }
 
 .addressbar {
@@ -113,17 +149,22 @@
 
 .addressbar input {
   width: 100%;
-  background: var(--hud-bg);
-  border: var(--hud-stroke) solid var(--hud-line);
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
   border-radius: var(--hud-chamfer);
   color: var(--hud-text);
   font: inherit;
   padding: 5px 34px 5px 10px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .addressbar input:focus-visible {
   outline: none;
   border-color: var(--hud-cyan);
+  box-shadow:
+    0 0 8px var(--hud-cyan-dim),
+    inset 0 1px 0 var(--hud-bevel-light);
 }
 
 .addressbar__shield {
@@ -137,7 +178,9 @@
   padding: 0;
   border-radius: 50%;
   color: var(--hud-cyan);
-  box-shadow: 0 0 6px var(--hud-cyan-dim);
+  box-shadow:
+    0 0 6px var(--hud-cyan-dim),
+    inset 0 1px 0 var(--hud-bevel-light);
 }
 
 /* Same control, different state: the glyph stays, the light goes out. */
@@ -149,19 +192,49 @@
 
 .wincontrols {
   display: flex;
-  gap: 2px;
+  gap: 4px;
 }
 
-.wincontrols button {
-  border-radius: 0;
-  min-width: 34px;
-  height: 30px;
-  padding: 0;
+.wincontrols .orb {
+  color: var(--hud-text);
 }
 
 .wincontrols__close:hover {
-  background: var(--hud-red);
+  background:
+    radial-gradient(
+      circle at 32% 28%,
+      var(--hud-red),
+      var(--hud-bg) 140%
+    );
   color: var(--hud-bg);
+}
+
+/* Icon tile: the new-tab face, shared language with dash nodes. */
+.tile {
+  background:
+    linear-gradient(
+      160deg,
+      var(--hud-surface-raised),
+      var(--hud-bg)
+    );
+  border-color: var(--hud-line);
+  box-shadow:
+    inset 0 1px 0 var(--hud-bevel-light),
+    inset 0 -2px 3px var(--hud-bevel-dark);
+}
+
+.tile:hover {
+  border-color: var(--hud-cyan-dim);
+}
+
+.rail__card {
+  padding: 8px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: var(--hud-chamfer);
+  box-shadow:
+    inset 0 1px 0 var(--hud-bevel-light),
+    0 0 10px rgba(42, 138, 148, 0.18);
 }
 
 .rail {
@@ -177,6 +250,7 @@
   background: var(--hud-surface);
   border-left: var(--hud-stroke) solid var(--hud-line);
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .rail__section {

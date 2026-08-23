@@ -35,7 +35,7 @@ export function NavControls({ active }: Props): JSX.Element {
   return (
     <div className="navcontrols" role="group" aria-label="page navigation">
       <button
-        className="navcontrols__btn"
+        className="orb navcontrols__btn"
         aria-label="go back"
         disabled={active?.canGoBack !== true}
         onClick={goBack}
@@ -43,7 +43,7 @@ export function NavControls({ active }: Props): JSX.Element {
         {"\u2190"}
       </button>
       <button
-        className="navcontrols__btn"
+        className="orb navcontrols__btn"
         aria-label="go forward"
         disabled={active?.canGoForward !== true}
         onClick={goForward}
@@ -51,7 +51,7 @@ export function NavControls({ active }: Props): JSX.Element {
         {"\u2192"}
       </button>
       <button
-        className="navcontrols__btn"
+        className="orb navcontrols__btn"
         aria-label={loading ? "stop loading" : "reload page"}
         disabled={active === null}
         onClick={reloadOrStop}
