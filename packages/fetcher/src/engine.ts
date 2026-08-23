@@ -22,6 +22,18 @@ export class DownloadEngine {
     this.defaultSaveDir = defaultSaveDir ?? path.join(os.homedir(), "Downloads");
   }
 
+  async getStorageInfo(): Promise<{ freeBytes: number; totalBytes: number; saveDir: string }> {
+    try {
+      const { statfs } = await import("node:fs/promises");
+      const stats = await statfs(this.defaultSaveDir);
+      const freeBytes = stats.bavail * stats.bsize;
+      const totalBytes = stats.blocks * stats.bsize;
+      return { freeBytes, totalBytes, saveDir: this.defaultSaveDir };
+    } catch {
+      return { freeBytes: 100 * 1024 * 1024 * 1024, totalBytes: 500 * 1024 * 1024 * 1024, saveDir: this.defaultSaveDir };
+    }
+  }
+
   on(listener: (downloads: DownloadItem[]) => void): () => void {
     this.listeners.add(listener);
     return () => {

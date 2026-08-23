@@ -83,9 +83,11 @@ function broadcast(channel: string, payload: unknown): void {
   }
   for (const target of targets) {
     try {
-      target.send(channel, payload);
+      if (!target.isDestroyed()) {
+        target.send(channel, payload);
+      }
     } catch {
-      // a crashed view cannot receive pushes; the next event retries
+      // a crashed or destroyed view cannot receive pushes; the next event retries
     }
   }
 }
@@ -182,6 +184,12 @@ function bootstrap(): void {
     void downloadEngine.startDownload(url, { filename });
   });
 
+  app.on("child-process-gone", (_event, details) => {
+    if (details.type === "GPU" && details.reason !== "clean-exit") {
+      console.warn(`[Shell] GPU process exited unexpectedly (${details.reason}, exitCode: ${details.exitCode}).`);
+    }
+  });
+
   const setShieldEnabled = (enabled: boolean): void => {
     if (bridge === null) return;
     bridge.engine.setEnabled(enabled);
@@ -194,6 +202,7 @@ function bootstrap(): void {
     currentShieldStats,
     setShieldEnabled,
     currentDownloads: () => downloadEngine.getDownloads(),
+    getStorageInfo: () => downloadEngine.getStorageInfo(),
     onDownloadAction: (action: string, param1: string, param2?: unknown) => {
       if (action === "pause") downloadEngine.pause(param1);
       else if (action === "resume") void downloadEngine.resume(param1);
