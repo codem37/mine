@@ -1,10 +1,11 @@
-import { app, BrowserWindow } from "electron";
+import { app, BrowserWindow, shell } from "electron";
 import { fileURLToPath } from "node:url";
 import { writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { IPC_EVENTS } from "@mine/contracts";
 import { ShieldStatsSchema, WindowStateSchema } from "@mine/contracts";
 import { stripTrackingParams } from "@mine/shield";
+import { DownloadEngine } from "@mine/fetcher";
 import { TabManager } from "./tab-manager.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
@@ -117,6 +118,18 @@ function bootstrap(): void {
       new URL("./preload.cjs", import.meta.url),
     ),
   });
+  const downloadEngine = new DownloadEngine();
+  downloadEngine.on((downloads) => {
+    broadcast(IPC_EVENTS.fetcher.downloadsUpdated, downloads);
+  });
+
+  defaultSession().on("will-download", (_event, item) => {
+    const url = item.getURL();
+    const filename = item.getFilename();
+    item.cancel();
+    void downloadEngine.startDownload(url, { filename });
+  });
+
   const setShieldEnabled = (enabled: boolean): void => {
     if (bridge === null) return;
     bridge.engine.setEnabled(enabled);
@@ -125,7 +138,24 @@ function bootstrap(): void {
       currentShieldStats({ webContentsId: null }),
     );
   };
-  registerIpcHandlers(manager, win, { currentShieldStats, setShieldEnabled });
+  registerIpcHandlers(manager, win, {
+    currentShieldStats,
+    setShieldEnabled,
+    currentDownloads: () => downloadEngine.getDownloads(),
+    onDownloadAction: (action, id) => {
+      if (action === "pause") downloadEngine.pause(id);
+      else if (action === "resume") void downloadEngine.resume(id);
+      else if (action === "cancel") downloadEngine.cancel(id);
+      else if (action === "retry") void downloadEngine.retry(id);
+      else if (action === "openFile") {
+        const item = downloadEngine.getDownload(id);
+        if (item?.savePath) void shell.openPath(item.savePath);
+      } else if (action === "showInFolder") {
+        const item = downloadEngine.getDownload(id);
+        if (item?.savePath) shell.showItemInFolder(item.savePath);
+      }
+    },
+  });
 
   win.on("maximize", emitWindowState);
   win.on("unmaximize", emitWindowState);
@@ -144,7 +174,10 @@ function bootstrap(): void {
     () => bridge.requestRate.inLastMinute(),
   );
   sampler.start();
-  app.on("before-quit", () => sampler.stop());
+  app.on("before-quit", () => {
+    sampler.stop();
+    downloadEngine.dispose();
+  });
 
   bridge.setEmitter((signal) => {
     if (win.isDestroyed()) return;

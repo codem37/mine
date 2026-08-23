@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
+  DownloadIdRequestSchema,
+  DownloadItemSchema,
+  DownloadSegmentSchema,
   NavigateRequestSchema,
   NavigationStateSchema,
   NewTabRequestSchema,
@@ -219,5 +222,56 @@ describe("NavigationStateSchema", () => {
         errorCode: -3.5,
       }),
     ).toThrow();
+  });
+});
+
+describe("Download schemas", () => {
+  it("validates a complete DownloadItem and segment details", () => {
+    const item = {
+      id: "dl-1",
+      filename: "ubuntu.iso",
+      url: "https://releases.ubuntu.com/ubuntu.iso",
+      savePath: "/tmp/ubuntu.iso",
+      state: "downloading" as const,
+      downloadedBytes: 1024 * 1024,
+      totalBytes: 50 * 1024 * 1024,
+      speedBytesPerSec: 512 * 1024,
+      etaSeconds: 98,
+      segments: [
+        {
+          id: 0,
+          startByte: 0,
+          endByte: 1000,
+          downloadedBytes: 500,
+          progressPercent: 50,
+          active: true,
+        },
+      ],
+    };
+    expect(() => DownloadItemSchema.parse(item)).not.toThrow();
+  });
+
+  it("validates magnet links for torrent downloads", () => {
+    const torrentItem = {
+      id: "dl-torrent-1",
+      filename: "archive.zip",
+      url: "magnet:?xt=urn:btih:c12fe1c06bba254a9dc9f519b33537709a23e290&dn=archive.zip",
+      state: "downloading" as const,
+      downloadedBytes: 0,
+      totalBytes: 10000,
+      speedBytesPerSec: 100,
+      etaSeconds: 100,
+      segments: [],
+      isTorrent: true,
+      peersCount: 8,
+    };
+    expect(() => DownloadItemSchema.parse(torrentItem)).not.toThrow();
+  });
+
+  it("validates DownloadIdRequestSchema and rejects empty id", () => {
+    expect(DownloadIdRequestSchema.parse({ downloadId: "dl-1" })).toEqual({
+      downloadId: "dl-1",
+    });
+    expect(() => DownloadIdRequestSchema.parse({ downloadId: "" })).toThrow();
   });
 });

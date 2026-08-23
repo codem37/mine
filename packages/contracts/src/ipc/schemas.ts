@@ -3,6 +3,12 @@ import { LOAD_STATES } from "../types/navigation.js";
 import type { NavigationState } from "../types/navigation.js";
 import type { TabSnapshot } from "../types/tab.js";
 import { SHIELD_ENGINE_STATES } from "../shield/verdict.js";
+import { DOWNLOAD_STATES } from "../types/download.js";
+import type {
+  DownloadItem,
+  DownloadSegment,
+  DownloadState,
+} from "../types/download.js";
 
 export const TabIdSchema = z.string().min(1);
 
@@ -91,40 +97,35 @@ export const TelemetrySchema = z.object({
 
 export type Telemetry = z.infer<typeof TelemetrySchema>;
 
-export const DOWNLOAD_STATES = [
-  "queued",
-  "downloading",
-  "paused",
-  "resuming",
-  "completed",
-  "failed",
-  "cancelled",
-] as const;
+export { DOWNLOAD_STATES } from "../types/download.js";
+export type { DownloadState, DownloadSegment, DownloadItem } from "../types/download.js";
 
 export const DownloadStateSchema = z.enum(DOWNLOAD_STATES);
-export type DownloadState = z.infer<typeof DownloadStateSchema>;
 
-export const DownloadSegmentSchema = z.object({
+export const DownloadSegmentSchema: z.ZodType<DownloadSegment> = z.object({
   id: z.number().int().min(0),
+  startByte: z.number().int().min(0).optional(),
+  endByte: z.number().int().min(0).optional(),
+  downloadedBytes: z.number().int().min(0).optional(),
   progressPercent: z.number().min(0).max(100),
   active: z.boolean(),
 });
 
-export type DownloadSegment = z.infer<typeof DownloadSegmentSchema>;
-
-export const DownloadItemSchema = z.object({
+export const DownloadItemSchema: z.ZodType<DownloadItem> = z.object({
   id: z.string().min(1),
   filename: z.string().min(1),
-  url: UrlSchema,
+  url: z.string().min(1),
+  savePath: z.string().optional(),
   state: DownloadStateSchema,
   downloadedBytes: z.number().min(0),
   totalBytes: z.number().min(0),
   speedBytesPerSec: z.number().min(0),
   etaSeconds: z.number().min(0).nullable(),
   segments: z.array(DownloadSegmentSchema),
+  isTorrent: z.boolean().optional(),
+  peersCount: z.number().int().min(0).optional(),
+  errorMessage: z.string().nullable().optional(),
 });
-
-export type DownloadItem = z.infer<typeof DownloadItemSchema>;
 
 export const DownloadIdRequestSchema = z.object({
   downloadId: z.string().min(1),
@@ -133,5 +134,5 @@ export const DownloadIdRequestSchema = z.object({
 export type DownloadIdRequest = z.infer<typeof DownloadIdRequestSchema>;
 
 export const DownloadsUpdatedPayloadSchema = z.array(DownloadItemSchema);
-export type DownloadsUpdatedPayload = z.infer<typeof DownloadsUpdatedPayloadSchema>;
+export type DownloadsUpdatedPayload = readonly DownloadItem[];
 

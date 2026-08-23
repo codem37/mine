@@ -155,4 +155,18 @@ export function registerIpcHandlers(
     deps.onDownloadAction?.("retry", payload.value.downloadId);
     return { ok: true, value: null } as const;
   });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.openFile, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("openFile", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.fetcher.showInFolder, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.onDownloadAction?.("showInFolder", payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
 }

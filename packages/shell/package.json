@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@mine/contracts": "workspace:*",
+    "@mine/fetcher": "workspace:*",
     "@mine/shield": "workspace:*",
     "zod": "^4.0.0"
   },
