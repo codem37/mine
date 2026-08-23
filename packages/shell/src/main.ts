@@ -172,7 +172,7 @@ function bootstrap(): void {
         mimeType,
       });
     }
-    callback({ responseHeaders: details.responseHeaders });
+    callback({});
   });
 
   defaultSession().on("will-download", (_event, item) => {

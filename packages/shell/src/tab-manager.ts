@@ -186,11 +186,23 @@ export class TabManager {
   }
 
   goBack(id: TabId): Result<null, AppError> {
-    return this.simpleNavigation(id, (wc) => wc.goBack());
+    return this.simpleNavigation(id, (wc) => {
+      if (wc.navigationHistory && typeof wc.navigationHistory.goBack === "function") {
+        wc.navigationHistory.goBack();
+      } else {
+        wc.goBack();
+      }
+    });
   }
 
   goForward(id: TabId): Result<null, AppError> {
-    return this.simpleNavigation(id, (wc) => wc.goForward());
+    return this.simpleNavigation(id, (wc) => {
+      if (wc.navigationHistory && typeof wc.navigationHistory.goForward === "function") {
+        wc.navigationHistory.goForward();
+      } else {
+        wc.goForward();
+      }
+    });
   }
 
   reload(id: TabId): Result<null, AppError> {
