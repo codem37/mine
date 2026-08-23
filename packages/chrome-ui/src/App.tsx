@@ -500,6 +500,11 @@ export function App(): JSX.Element {
           onOpenBrowserCenter={() => setBrowserCenterOpen(true)}
           onOpenSettings={() => setSettingsOpen(true)}
           onOpenDiagnostics={() => setHealthModalOpen(true)}
+          onOpenCommandCenter={() => setCommandCenterOpen(true)}
+          onOpenShieldPanel={() => setShieldPanelOpen(true)}
+          onOpenEvents={() => setEventsModalOpen(true)}
+          onOpenMediaQueue={() => setMediaQueueOpen(true)}
+          onOpenMediaHistory={() => setMediaHistoryOpen(true)}
         />
       ) : null}
 
