@@ -43,15 +43,43 @@ export interface PlaybackDiagnostics {
   readonly audioVideoSyncMs: number;
 }
 
+export interface VideoTransform {
+  readonly fit: "contain" | "cover" | "fill" | "original";
+  readonly rotation: 0 | 90 | 180 | 270;
+  readonly flipH: boolean;
+  readonly flipV: boolean;
+}
+
+export interface EqualizerState {
+  readonly enabled: boolean;
+  readonly preset: string;
+  readonly bands: readonly number[]; // 10 bands: 60Hz, 150Hz, 400Hz, 1kHz, 2.4kHz, 6kHz, 15kHz, etc.
+}
+
+export interface MediaQueueItem {
+  readonly id: string;
+  readonly source: MediaSource;
+  readonly addedAt: number;
+}
+
+export interface MediaHistoryItem {
+  readonly id: string;
+  readonly title: string;
+  readonly domain: string;
+  readonly url: string;
+  readonly timestamp: number;
+}
+
 export interface PlayerState {
   readonly sourceId: string | null;
   readonly status: PlayerStatus;
   readonly currentTime: number;
   readonly duration: number;
   readonly bufferedSeconds: number;
-  readonly volume: number;
+  readonly volume: number; // 0.0 to 1.0
+  readonly volumeBoost: number; // 1.0 to 2.0 (software volume boost)
   readonly muted: boolean;
-  readonly playbackRate: number; // 0.25 to 3.0
+  readonly playbackRate: number; // 0.25 to 4.0
   readonly activeQuality: string;
   readonly activeAudioTrack: string | null;
   readonly activeSubtitleTrack: string | null;
@@ -62,6 +90,9 @@ export interface PlayerState {
   readonly currentFrame: number;
   readonly frameFps: number;
   readonly fullscreen: boolean;
+  readonly videoTransform: VideoTransform;
+  readonly equalizer: EqualizerState;
+  readonly activeTabMediaCount: number;
   readonly diagnostics: PlaybackDiagnostics;
 }
 
@@ -72,8 +103,24 @@ export interface PlayNativeRequest {
 }
 
 export interface MediaControlRequest {
-  readonly action: "play" | "pause" | "seek" | "setVolume" | "setMute" | "setSpeed" | "setQuality" | "setSubtitle" | "setAudioTrack" | "setABLoop" | "stepFrame" | "setSubtitleOffset" | "setAudioOffset";
-  readonly value?: number | string | boolean | readonly [number, number] | null;
+  readonly action:
+    | "play"
+    | "pause"
+    | "seek"
+    | "setVolume"
+    | "setVolumeBoost"
+    | "setMute"
+    | "setSpeed"
+    | "setQuality"
+    | "setSubtitle"
+    | "setAudioTrack"
+    | "setABLoop"
+    | "stepFrame"
+    | "setSubtitleOffset"
+    | "setAudioOffset"
+    | "setVideoTransform"
+    | "setEqualizer";
+  readonly value?: number | string | boolean | VideoTransform | EqualizerState | readonly [number, number] | null;
 }
 
 export interface LoadSubtitleRequest {

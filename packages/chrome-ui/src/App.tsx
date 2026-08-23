@@ -27,6 +27,9 @@ import { HealthRecoveryModal } from "./components/HealthRecoveryModal.js";
 import { useLiveStats } from "./use-live-stats.js";
 import { ShieldPanel } from "./components/ShieldPanel.js";
 import { FilterListModal } from "./components/FilterListModal.js";
+import { MediaDetectionIndicator } from "./components/MediaDetectionIndicator.js";
+import { MediaQueueModal } from "./components/MediaQueueModal.js";
+import { MediaHistoryModal } from "./components/MediaHistoryModal.js";
 
 const INITIAL_WORKSPACES: readonly Workspace[] = [
   { id: "ws-personal", name: "Personal", icon: "🏠", accent: "cyan", tabIds: [], activeTabId: null },
@@ -60,6 +63,9 @@ export function App(): JSX.Element {
   const [dismissedLookalike, setDismissedLookalike] = useState(false);
   const [shieldPanelOpen, setShieldPanelOpen] = useState(false);
   const [filterListModalOpen, setFilterListModalOpen] = useState(false);
+  const [detectedMediaToast, setDetectedMediaToast] = useState<MediaSource | null>(null);
+  const [mediaQueueOpen, setMediaQueueOpen] = useState(false);
+  const [mediaHistoryOpen, setMediaHistoryOpen] = useState(false);
 
   const [workspaces, setWorkspaces] = useState<readonly Workspace[]>(INITIAL_WORKSPACES);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState("ws-personal");
@@ -108,7 +114,12 @@ export function App(): JSX.Element {
     }
     if (window.mine.onStreamDetected) {
       const off = window.mine.onStreamDetected((sources) => {
-        if (active) setMediaSources(sources);
+        if (active) {
+          setMediaSources(sources);
+          if (sources.length > 0) {
+            setDetectedMediaToast(sources[sources.length - 1] ?? null);
+          }
+        }
       });
       return () => {
         active = false;
@@ -213,6 +224,8 @@ export function App(): JSX.Element {
       <CinematicPlayer
         source={activePlayerSource}
         onClose={() => setActivePlayerSource(null)}
+        onOpenQueue={() => setMediaQueueOpen(true)}
+        onOpenHistory={() => setMediaHistoryOpen(true)}
       />
     );
   }
@@ -416,6 +429,32 @@ export function App(): JSX.Element {
 
       {storageModalOpen ? (
         <PinStorageManagerModal onClose={() => setStorageModalOpen(false)} />
+      ) : null}
+
+      {detectedMediaToast ? (
+        <MediaDetectionIndicator
+          source={detectedMediaToast}
+          onOpenPlayer={(src) => setActivePlayerSource(src)}
+          onDownload={(src) => {
+            void window.mine.downloadMediaSource({
+              sourceId: src.id,
+              url: src.url,
+              title: src.title || "Media Download",
+            });
+          }}
+          onClose={() => setDetectedMediaToast(null)}
+        />
+      ) : null}
+
+      {mediaQueueOpen ? (
+        <MediaQueueModal
+          onClose={() => setMediaQueueOpen(false)}
+          onPlayItem={(src) => setActivePlayerSource(src)}
+        />
+      ) : null}
+
+      {mediaHistoryOpen ? (
+        <MediaHistoryModal onClose={() => setMediaHistoryOpen(false)} />
       ) : null}
 
       {fullFetcherOpen ? (

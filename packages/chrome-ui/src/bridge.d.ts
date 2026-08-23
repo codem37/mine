@@ -63,6 +63,12 @@ export interface MineBridge {
   getMediaState(): Promise<Result<import("@mine/contracts").PlayerState>>;
   controlMedia(payload: import("@mine/contracts").MediaControlRequest): Promise<InvokeResult>;
   downloadMediaSource(payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult>;
+  getMediaQueue(): Promise<Result<readonly import("@mine/contracts").MediaQueueItem[]>>;
+  addToMediaQueue(payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult>;
+  removeFromMediaQueue(id: string): Promise<InvokeResult>;
+  clearMediaQueue(): Promise<InvokeResult>;
+  getMediaHistory(): Promise<Result<readonly import("@mine/contracts").MediaHistoryItem[]>>;
+  clearMediaHistory(): Promise<InvokeResult>;
   onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaSource[]) => void): () => void;
   onPlayerStateChanged(cb: (payload: import("@mine/contracts").PlayerState) => void): () => void;
   search(payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>>;

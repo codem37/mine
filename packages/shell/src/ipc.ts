@@ -43,6 +43,12 @@ export interface IpcDeps {
   readonly onMediaAction?: (action: string, param1: string, param2?: unknown) => void;
   readonly getMediaState?: () => unknown;
   readonly onMediaControl?: (action: string, value?: unknown) => void;
+  readonly getMediaQueue?: () => unknown[];
+  readonly addToMediaQueue?: (sourceId: string) => unknown;
+  readonly removeFromMediaQueue?: (id: string) => void;
+  readonly clearMediaQueue?: () => void;
+  readonly getMediaHistory?: () => unknown[];
+  readonly clearMediaHistory?: () => void;
   readonly onSearchQuery?: (req: import("@mine/contracts").SearchRequest) => Promise<unknown>;
   readonly onSearchSuggest?: (query: string, isPrivate?: boolean) => unknown;
   readonly getSecurityVerdict?: (url: string) => unknown;
@@ -311,6 +317,45 @@ export function registerIpcHandlers(
     if (!payload.ok) return payload;
     // Direct handoff to Phase 4 Fetcher
     deps.onDownloadAction?.("add", payload.value.url, payload.value.title);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.getQueue, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getMediaQueue?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.addQueue, async (_event, raw: unknown) => {
+    const payload = parsePayload(MediaItemDownloadRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.addToMediaQueue?.(payload.value.sourceId) ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.removeQueue, async (_event, raw: unknown) => {
+    const payload = parsePayload(DownloadIdRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.removeFromMediaQueue?.(payload.value.downloadId);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.clearQueue, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.clearMediaQueue?.();
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.getHistory, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getMediaHistory?.() ?? [] } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.media.clearHistory, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.clearMediaHistory?.();
     return { ok: true, value: null } as const;
   });
 

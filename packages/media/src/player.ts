@@ -1,11 +1,24 @@
 import { spawn, type ChildProcess } from "node:child_process";
-import type { PlayerState } from "@mine/contracts";
+import type { EqualizerState, PlayerState, VideoTransform } from "@mine/contracts";
 
 export interface PlayerOptions {
   readonly title?: string;
   readonly playerBinary?: string;
   readonly startPosition?: number;
 }
+
+const DEFAULT_VIDEO_TRANSFORM: VideoTransform = {
+  fit: "contain",
+  rotation: 0,
+  flipH: false,
+  flipV: false,
+};
+
+const DEFAULT_EQUALIZER: EqualizerState = {
+  enabled: false,
+  preset: "Flat",
+  bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+};
 
 export class NativePlayer {
   private activeProcess: ChildProcess | null = null;
@@ -16,6 +29,7 @@ export class NativePlayer {
     duration: 0,
     bufferedSeconds: 0,
     volume: 1.0,
+    volumeBoost: 1.0,
     muted: false,
     playbackRate: 1.0,
     activeQuality: "Auto",
@@ -28,6 +42,9 @@ export class NativePlayer {
     currentFrame: 0,
     frameFps: 30,
     fullscreen: false,
+    videoTransform: DEFAULT_VIDEO_TRANSFORM,
+    equalizer: DEFAULT_EQUALIZER,
+    activeTabMediaCount: 0,
     diagnostics: {
       decoder: "h264_nvdec (Hardware)",
       renderer: "gpu (Direct3D11)",
@@ -58,7 +75,6 @@ export class NativePlayer {
         stdio: "ignore",
       });
       child.on("error", () => {
-        // Fallback when native player binary (mpv/vlc) is not installed on host PATH
         this.activeProcess = null;
       });
       child.unref();
@@ -71,7 +87,6 @@ export class NativePlayer {
       };
       return true;
     } catch {
-      // Fallback preview mode inside player window
       this.state = {
         ...this.state,
         sourceId: urlString,
@@ -102,9 +117,28 @@ export class NativePlayer {
     this.state = { ...this.state, volume: Math.max(0, Math.min(1, vol)), muted: vol === 0 };
   }
 
+  setVolumeBoost(boost: number): void {
+    const clamped = Math.max(1.0, Math.min(2.0, boost));
+    this.state = { ...this.state, volumeBoost: clamped };
+  }
+
   setSpeed(speed: number): void {
-    const clamped = Math.max(0.25, Math.min(3.0, speed));
+    const clamped = Math.max(0.25, Math.min(4.0, speed));
     this.state = { ...this.state, playbackRate: clamped };
+  }
+
+  setVideoTransform(transform: Partial<VideoTransform>): void {
+    this.state = {
+      ...this.state,
+      videoTransform: { ...this.state.videoTransform, ...transform },
+    };
+  }
+
+  setEqualizer(eq: Partial<EqualizerState>): void {
+    this.state = {
+      ...this.state,
+      equalizer: { ...this.state.equalizer, ...eq },
+    };
   }
 
   setABLoop(range: readonly [number, number] | null): void {
@@ -132,6 +166,10 @@ export class NativePlayer {
 
   setAudioOffset(seconds: number): void {
     this.state = { ...this.state, audioOffsetSeconds: Math.max(-5, Math.min(5, seconds)) };
+  }
+
+  setActiveTabMediaCount(count: number): void {
+    this.state = { ...this.state, activeTabMediaCount: Math.max(0, count) };
   }
 
   getState(): PlayerState {

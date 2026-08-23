@@ -282,6 +282,19 @@ export const PlaybackDiagnosticsSchema = z.object({
   audioVideoSyncMs: z.number(),
 });
 
+export const VideoTransformSchema = z.object({
+  fit: z.enum(["contain", "cover", "fill", "original"]),
+  rotation: z.union([z.literal(0), z.literal(90), z.literal(180), z.literal(270)]),
+  flipH: z.boolean(),
+  flipV: z.boolean(),
+});
+
+export const EqualizerStateSchema = z.object({
+  enabled: z.boolean(),
+  preset: z.string(),
+  bands: z.array(z.number()),
+});
+
 export const PlayerStateSchema: z.ZodType<MinePlayerState> = z.object({
   sourceId: z.string().nullable(),
   status: z.enum(["idle", "buffering", "playing", "paused", "ended", "error"]),
@@ -289,6 +302,7 @@ export const PlayerStateSchema: z.ZodType<MinePlayerState> = z.object({
   duration: z.number(),
   bufferedSeconds: z.number(),
   volume: z.number(),
+  volumeBoost: z.number(),
   muted: z.boolean(),
   playbackRate: z.number(),
   activeQuality: z.string(),
@@ -301,6 +315,9 @@ export const PlayerStateSchema: z.ZodType<MinePlayerState> = z.object({
   currentFrame: z.number(),
   frameFps: z.number(),
   fullscreen: z.boolean(),
+  videoTransform: VideoTransformSchema,
+  equalizer: EqualizerStateSchema,
+  activeTabMediaCount: z.number(),
   diagnostics: PlaybackDiagnosticsSchema,
 });
 

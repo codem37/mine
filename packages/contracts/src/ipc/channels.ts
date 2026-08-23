@@ -46,6 +46,12 @@ export const IPC_CHANNELS = {
     downloadSource: "mine:media:download-source",
     loadSubtitle: "mine:media:load-subtitle",
     getDiagnostics: "mine:media:get-diagnostics",
+    getQueue: "mine:media:get-queue",
+    addQueue: "mine:media:add-queue",
+    removeQueue: "mine:media:remove-queue",
+    clearQueue: "mine:media:clear-queue",
+    getHistory: "mine:media:get-history",
+    clearHistory: "mine:media:clear-history",
   },
   search: {
     query: "mine:search:query",

@@ -141,6 +141,18 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.media.control, payload),
   downloadMediaSource: (payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult> =>
     ipcRenderer.invoke(IPC_CHANNELS.media.downloadSource, payload),
+  getMediaQueue: (): Promise<Result<readonly import("@mine/contracts").MediaQueueItem[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.getQueue, {}),
+  addToMediaQueue: (payload: import("@mine/contracts").MediaItemDownloadRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.addQueue, payload),
+  removeFromMediaQueue: (id: string): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.removeQueue, { downloadId: id }),
+  clearMediaQueue: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.clearQueue, {}),
+  getMediaHistory: (): Promise<Result<readonly import("@mine/contracts").MediaHistoryItem[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.getHistory, {}),
+  clearMediaHistory: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.media.clearHistory, {}),
   onStreamDetected: (callback: (payload: readonly import("@mine/contracts").MediaSource[]) => void): (() => void) => {
     const listener = (_event: unknown, payload: readonly import("@mine/contracts").MediaSource[]): void => {
       callback(payload);

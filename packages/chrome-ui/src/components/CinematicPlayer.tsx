@@ -1,30 +1,42 @@
-import { useState, useEffect, useRef } from "react";
-import type { MediaSource, PlayerState } from "@mine/contracts";
-import type { JSX } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
+import type { JSX, ChangeEvent } from "react";
+import type { EqualizerState, MediaSource, PlayerState, VideoTransform } from "@mine/contracts";
 
 interface Props {
   readonly source: MediaSource;
   readonly onClose: () => void;
+  readonly onOpenQueue?: () => void;
+  readonly onOpenHistory?: () => void;
 }
+
+const PLAYBACK_SPEEDS = [0.25, 0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0];
+
+const EQ_PRESETS: Record<string, number[]> = {
+  Flat: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+  Rock: [4, 3, 2, 0, -1, 1, 3, 4, 5, 5],
+  Pop: [-1, 1, 3, 4, 3, 1, -1, -1, 1, 2],
+  Jazz: [3, 2, 1, 2, -1, -1, 0, 1, 2, 3],
+  Classical: [5, 4, 3, 2, -1, -1, 0, 2, 3, 4],
+  Speech: [-2, -1, 0, 2, 4, 4, 3, 1, -1, -2],
+};
 
 function formatTime(seconds: number): string {
-  if (!seconds || !Number.isFinite(seconds)) return "00:00";
+  if (!seconds || isNaN(seconds)) return "00:00";
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  const mStr = m.toString().padStart(2, "0");
-  const sStr = s.toString().padStart(2, "0");
-  return `${mStr}:${sStr}`;
+  return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
 }
 
-export function CinematicPlayer({ source, onClose }: Props): JSX.Element {
-  const [controlsVisible, setControlsVisible] = useState(true);
+export function CinematicPlayer({ source, onClose, onOpenQueue, onOpenHistory }: Props): JSX.Element {
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [playerState, setPlayerState] = useState<PlayerState>({
     sourceId: source.id,
     status: "playing",
-    currentTime: source.playbackPosition ?? 0,
+    currentTime: 0,
     duration: source.durationSeconds ?? 120,
-    bufferedSeconds: 60,
+    bufferedSeconds: 30,
     volume: 1.0,
+    volumeBoost: 1.0,
     muted: false,
     playbackRate: 1.0,
     activeQuality: "Auto",
@@ -37,6 +49,9 @@ export function CinematicPlayer({ source, onClose }: Props): JSX.Element {
     currentFrame: 0,
     frameFps: 30,
     fullscreen: false,
+    videoTransform: { fit: "contain", rotation: 0, flipH: false, flipV: false },
+    equalizer: { enabled: false, preset: "Flat", bands: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+    activeTabMediaCount: 1,
     diagnostics: {
       decoder: "h264_nvdec (Hardware)",
       renderer: "gpu (Direct3D11)",
@@ -47,324 +62,402 @@ export function CinematicPlayer({ source, onClose }: Props): JSX.Element {
     },
   });
 
-  const [showSpeedMenu, setShowSpeedMenu] = useState(false);
-  const [showQualityMenu, setShowQualityMenu] = useState(false);
-  const [showSubMenu, setShowSubMenu] = useState(false);
-  const [showAudioMenu, setShowAudioMenu] = useState(false);
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
-  const [showResumePrompt, setShowResumePrompt] = useState(Boolean(source.playbackPosition && source.playbackPosition > 10));
+  const [selectedQuality, setSelectedQuality] = useState("1080p");
+  const [showInfo, setShowInfo] = useState(false);
+  const [showEq, setShowEq] = useState(false);
+  const [showTransform, setShowTransform] = useState(false);
+  const [customSubtitleUrl, setCustomSubtitleUrl] = useState<string | null>(null);
+  const [downloadMsg, setDownloadMsg] = useState("");
+  const [volumeBoostEnabled, setVolumeBoostEnabled] = useState(false);
 
-  const inactivityTimerRef = useRef<number | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-
-  // Auto-hide controls after 2 seconds of inactivity
-  const handleMouseMove = (): void => {
-    setControlsVisible(true);
-    if (inactivityTimerRef.current) clearTimeout(inactivityTimerRef.current);
-    inactivityTimerRef.current = setTimeout(() => {
-      if (!showSpeedMenu && !showQualityMenu && !showSubMenu && !showAudioMenu && !showDiagnostics) {
-        setControlsVisible(false);
-      }
-    }, 2000) as unknown as number;
-  };
-
+  // Sync IPC state
   useEffect(() => {
     let active = true;
-    if (window.mine.onPlayerStateChanged) {
-      const off = window.mine.onPlayerStateChanged((st) => {
-        if (active) setPlayerState(st);
+    if (window.mine.getMediaState) {
+      void window.mine.getMediaState().then((res) => {
+        if (active && res.ok && res.value) setPlayerState(res.value);
       });
-      return () => {
-        active = false;
-        off();
-      };
     }
+    const unbind = window.mine.onPlayerStateChanged?.((st) => {
+      if (active) setPlayerState(st);
+    });
     return () => {
       active = false;
+      unbind?.();
     };
   }, []);
 
-  const handleControl = (action: string, value?: unknown): void => {
-    if (window.mine.controlMedia) {
-      void window.mine.controlMedia({ action: action as any, value: value as any });
-    }
-  };
+  const sendControl = useCallback((action: import("@mine/contracts").MediaControlRequest["action"], value?: unknown) => {
+    void window.mine.controlMedia?.({ action, value });
+  }, []);
 
-  const togglePlay = (): void => {
-    if (playerState.status === "playing") {
-      handleControl("pause");
-      if (videoRef.current) videoRef.current.pause();
-    } else {
-      handleControl("play");
-      if (videoRef.current) void videoRef.current.play();
-    }
-  };
+  // Keyboard Shortcuts (Space, Arrows, M, F)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent): void => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if (e.code === "Space") {
+        e.preventDefault();
+        sendControl(playerState.status === "playing" ? "pause" : "play");
+      } else if (e.code === "ArrowLeft") {
+        e.preventDefault();
+        sendControl("seek", Math.max(0, playerState.currentTime - 5));
+      } else if (e.code === "ArrowRight") {
+        e.preventDefault();
+        sendControl("seek", playerState.currentTime + 5);
+      } else if (e.code === "ArrowUp") {
+        e.preventDefault();
+        sendControl("setVolume", Math.min(1.0, playerState.volume + 0.1));
+      } else if (e.code === "ArrowDown") {
+        e.preventDefault();
+        sendControl("setVolume", Math.max(0.0, playerState.volume - 0.1));
+      } else if (e.code === "KeyM") {
+        e.preventDefault();
+        sendControl("setMute", !playerState.muted);
+      } else if (e.code === "KeyF") {
+        e.preventDefault();
+        if (!document.fullscreenElement) {
+          void videoRef.current?.requestFullscreen();
+        } else {
+          void document.exitFullscreen();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [playerState, sendControl]);
 
-  const handleSeek = (seconds: number): void => {
-    handleControl("seek", seconds);
-    if (videoRef.current) videoRef.current.currentTime = seconds;
-  };
-
-  const setABLoop = (): void => {
-    if (!playerState.loopRange) {
-      const a = Math.max(0, playerState.currentTime - 5);
-      const b = Math.min(playerState.duration, playerState.currentTime + 10);
-      handleControl("setABLoop", [a, b]);
-    } else {
-      handleControl("setABLoop", null);
-    }
-  };
-
+  // Download Handoff to @mine/fetcher
   const handleDownload = (): void => {
-    if (window.mine.downloadMediaSource) {
-      void window.mine.downloadMediaSource({
-        sourceId: source.id,
-        url: source.url,
-        title: source.title || "media-download",
-        quality: playerState.activeQuality,
-        format: source.format,
-      });
+    if (source.isDrmProtected) {
+      setDownloadMsg("Protected media — direct download unavailable.");
+      return;
+    }
+    setDownloadMsg("Sent to Download Manager…");
+    void window.mine.downloadMediaSource({
+      sourceId: source.id,
+      url: source.url,
+      title: source.title || "Media Stream",
+      quality: selectedQuality,
+      format: source.format,
+    }).finally(() => {
+      setTimeout(() => setDownloadMsg(""), 3000);
+    });
+  };
+
+  // Video Frame Screenshot
+  const handleTakeScreenshot = (): void => {
+    const video = videoRef.current;
+    if (!video) return;
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth || 1280;
+      canvas.height = video.videoHeight || 720;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL("image/png");
+        const a = document.createElement("a");
+        a.href = dataUrl;
+        a.download = `${source.title || "video-frame"}-${Date.now()}.png`;
+        a.click();
+      }
+    } catch {
+      // ignore frame capture restriction
     }
   };
 
-  const progressPercent = playerState.duration > 0
-    ? (playerState.currentTime / playerState.duration) * 100
-    : 0;
+  // Load subtitle file
+  const handleSubtitleFileChange = (e: ChangeEvent<HTMLInputElement>): void => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setCustomSubtitleUrl(url);
+    }
+  };
 
-  const bufferedPercent = playerState.duration > 0
-    ? (playerState.bufferedSeconds / playerState.duration) * 100
-    : 0;
+  const transform = playerState.videoTransform;
+  const transformStyle = {
+    objectFit: transform.fit,
+    transform: `rotate(${transform.rotation}deg) scaleX(${transform.flipH ? -1 : 1}) scaleY(${transform.flipV ? -1 : 1})`,
+  };
 
   return (
-    <div
-      className="cinematic-player"
-      onMouseMove={handleMouseMove}
-      data-testid="cinematic-player"
-    >
-      {/* Resume Playback Prompt */}
-      {showResumePrompt ? (
-        <div className="cinematic-resume-toast" data-testid="resume-prompt">
-          <span>Resume from {formatTime(source.playbackPosition!)}?</span>
-          <div className="cinematic-resume__actions">
-            <button
-              type="button"
-              className="glass-btn glass-btn--sm glass-btn--primary"
-              onClick={() => {
-                handleSeek(source.playbackPosition!);
-                setShowResumePrompt(false);
-              }}
-            >
-              Resume
+    <div className="cinematic-player-overlay" data-testid="cinematic-player">
+      <div className="cinematic-player-card">
+        {/* Header toolbar */}
+        <header className="cinematic-player__header">
+          <span className="cinematic-player__title" title={source.title || "Media Player"}>
+            {source.title || "Media Player"}
+          </span>
+          <div className="cinematic-player__header-actions">
+            {onOpenQueue && (
+              <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenQueue} title="Queue">
+                📋 Queue
+              </button>
+            )}
+            {onOpenHistory && (
+              <button type="button" className="glass-btn glass-btn--sm" onClick={onOpenHistory} title="History">
+                📜 History
+              </button>
+            )}
+            <button type="button" className="glass-btn glass-btn--sm" onClick={() => setShowInfo(!showInfo)} title="Media Info">
+              ℹ Info
             </button>
-            <button
-              type="button"
-              className="glass-btn glass-btn--sm"
-              onClick={() => {
-                handleSeek(0);
-                setShowResumePrompt(false);
-              }}
-            >
-              Start Over
+            <button type="button" className="glass-btn glass-btn--sm" onClick={onClose} aria-label="Close Player">
+              ✕
             </button>
           </div>
-        </div>
-      ) : null}
+        </header>
 
-      {/* Primary Video Surface */}
-      <div className="cinematic-player__surface">
-        <video
-          ref={videoRef}
-          src={source.url}
-          className="cinematic-player__video"
-          autoPlay
-          onTimeUpdate={(e) => {
-            const el = e.currentTarget;
-            if (el.duration) {
-              setPlayerState((prev) => ({
-                ...prev,
-                currentTime: el.currentTime,
-                duration: el.duration,
-                currentFrame: Math.floor(el.currentTime * prev.frameFps),
-              }));
-            }
-          }}
-        />
-      </div>
-
-      {/* Floating Header */}
-      <header className={`cinematic-player__header ${controlsVisible ? "cinematic-player__header--visible" : ""}`}>
-        <div className="cinematic-player__title-group">
-          <span className="cinematic-player__badge">{source.format.toUpperCase()}</span>
-          <span className="cinematic-player__title">{source.title || source.url}</span>
-        </div>
-        <div className="cinematic-player__header-actions">
-          <button
-            type="button"
-            className="glass-btn glass-btn--sm"
-            onClick={() => setShowDiagnostics(!showDiagnostics)}
-            title="Diagnostics"
+        {/* Video viewport */}
+        <div className="cinematic-player__viewport">
+          <video
+            ref={videoRef}
+            src={source.url}
+            className="cinematic-player__video"
+            style={transformStyle}
+            controls={false}
+            autoPlay
+            onClick={() => sendControl(playerState.status === "playing" ? "pause" : "play")}
           >
-            ⚙ Diagnostics
-          </button>
-          <button type="button" className="glass-btn glass-btn--sm" onClick={onClose}>
-            ✕
-          </button>
+            {customSubtitleUrl && <track kind="subtitles" src={customSubtitleUrl} default label="Custom Subtitles" />}
+          </video>
         </div>
-      </header>
 
-      {/* Diagnostics Panel Overlay */}
-      {showDiagnostics ? (
-        <div className="cinematic-diagnostics" data-testid="diagnostics-panel">
-          <h4>Playback Diagnostics</h4>
-          <div>Decoder: {playerState.diagnostics.decoder}</div>
-          <div>Renderer: {playerState.diagnostics.renderer}</div>
-          <div>Dropped Frames: {playerState.diagnostics.droppedFrames}</div>
-          <div>Hardware Decoding: {playerState.diagnostics.hwDecoding ? "Enabled ✓" : "Disabled"}</div>
-          <div>Audio/Video Sync: {playerState.diagnostics.audioVideoSyncMs} ms</div>
-        </div>
-      ) : null}
-
-      {/* Floating Bottom Control Bar */}
-      <footer className={`cinematic-player__footer ${controlsVisible ? "cinematic-player__footer--visible" : ""}`}>
-        {/* Glass Slim Timeline */}
-        <div className="cinematic-timeline-wrap">
-          <div className="cinematic-timeline__track">
-            <div className="cinematic-timeline__buffered" style={{ width: `${bufferedPercent}%` }} />
-            <div className="cinematic-timeline__progress" style={{ width: `${progressPercent}%` }} />
-
-            {/* A-B Loop Range Markers */}
-            {playerState.loopRange ? (
-              <div
-                className="cinematic-timeline__loop-marker"
-                style={{
-                  left: `${(playerState.loopRange[0] / playerState.duration) * 100}%`,
-                  width: `${((playerState.loopRange[1] - playerState.loopRange[0]) / playerState.duration) * 100}%`,
-                }}
-              />
-            ) : null}
-          </div>
-
+        {/* Timeline slider */}
+        <div className="cinematic-player__timeline-row">
+          <span className="time-code">{formatTime(playerState.currentTime)}</span>
           <input
             type="range"
-            min="0"
+            className="cinematic-timeline"
+            min={0}
             max={playerState.duration || 100}
+            step={0.1}
             value={playerState.currentTime}
-            className="cinematic-timeline__input"
-            onChange={(e) => handleSeek(Number(e.target.value))}
+            onChange={(e) => sendControl("seek", parseFloat(e.target.value))}
+            aria-label="Timeline seek"
           />
+          <span className="time-code">{formatTime(playerState.duration)}</span>
         </div>
 
-        {/* Control Buttons Bar */}
-        <div className="cinematic-controls">
-          <div className="cinematic-controls__left">
-            <button type="button" className="glass-btn glass-btn--primary" onClick={togglePlay}>
-              {playerState.status === "playing" ? "Ⅱ" : "▶"}
-            </button>
-
-            {/* Step Frames Controls */}
-            <button
-              type="button"
-              className="glass-btn glass-btn--sm"
-              title="Previous Frame (,)"
-              onClick={() => handleControl("stepFrame", false)}
-            >
-              |◀
+        {/* Physical VLC-inspired controls bar */}
+        <div className="cinematic-player__controls">
+          {/* Main playback buttons */}
+          <div className="ctrl-group">
+            <button type="button" className="glass-btn" title="Seek -5s" onClick={() => sendControl("seek", playerState.currentTime - 5)}>
+              ⏮
             </button>
             <button
               type="button"
-              className="glass-btn glass-btn--sm"
-              title="Next Frame (.)"
-              onClick={() => handleControl("stepFrame", true)}
+              className="glass-btn glass-btn--primary"
+              title={playerState.status === "playing" ? "Pause (Space)" : "Play (Space)"}
+              onClick={() => sendControl(playerState.status === "playing" ? "pause" : "play")}
             >
-              ▶|
+              {playerState.status === "playing" ? "⏸" : "▶"}
             </button>
-
-            {/* Time / Frame Counter */}
-            <span className="cinematic-time">
-              {formatTime(playerState.currentTime)} / {formatTime(playerState.duration)}
-              {source.isLive ? <span className="cinematic-live-badge">● LIVE</span> : null}
-            </span>
+            <button type="button" className="glass-btn" title="Seek +5s" onClick={() => sendControl("seek", playerState.currentTime + 5)}>
+              ⏭
+            </button>
+            <button type="button" className="glass-btn" title="Stop" onClick={() => sendControl("pause", 0)}>
+              ⏹
+            </button>
           </div>
 
-          <div className="cinematic-controls__right">
-            {/* A-B Loop Toggle */}
-            <button
-              type="button"
-              className={`glass-btn glass-btn--sm ${playerState.loopState === "range" ? "glass-btn--primary" : ""}`}
-              title="A-B Loop"
-              onClick={setABLoop}
-            >
-              A-B Loop {playerState.loopState === "range" ? "✓" : ""}
-            </button>
-
-            {/* Speed Selector */}
-            <div className="cinematic-popover-wrap">
-              <button
-                type="button"
-                className="glass-btn glass-btn--sm"
-                onClick={() => setShowSpeedMenu(!showSpeedMenu)}
-              >
-                {playerState.playbackRate}x
-              </button>
-              {showSpeedMenu ? (
-                <div className="cinematic-popover">
-                  {[0.5, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0].map((s) => (
-                    <button
-                      key={s}
-                      type="button"
-                      className={`cinematic-popover__item ${playerState.playbackRate === s ? "cinematic-popover__item--active" : ""}`}
-                      onClick={() => {
-                        handleControl("setSpeed", s);
-                        setShowSpeedMenu(false);
-                      }}
-                    >
-                      {s}x
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Quality Selector */}
-            <div className="cinematic-popover-wrap">
-              <button
-                type="button"
-                className="glass-btn glass-btn--sm"
-                onClick={() => setShowQualityMenu(!showQualityMenu)}
-              >
-                {playerState.activeQuality}
-              </button>
-              {showQualityMenu ? (
-                <div className="cinematic-popover">
-                  {source.qualities.map((q) => (
-                    <button
-                      key={q.label}
-                      type="button"
-                      className={`cinematic-popover__item ${playerState.activeQuality === q.label ? "cinematic-popover__item--active" : ""}`}
-                      onClick={() => {
-                        handleControl("setQuality", q.label);
-                        setShowQualityMenu(false);
-                      }}
-                    >
-                      {q.label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-
-            {/* Download Handoff to Fetcher */}
+          {/* Volume + Software Boost */}
+          <div className="ctrl-group volume-group">
             <button
               type="button"
               className="glass-btn glass-btn--sm"
-              title="Download via Fetcher"
+              onClick={() => sendControl("setMute", !playerState.muted)}
+              title={playerState.muted ? "Unmute" : "Mute"}
+            >
+              {playerState.muted || playerState.volume === 0 ? "🔇" : "🔊"}
+            </button>
+            <input
+              type="range"
+              className="volume-slider"
+              min={0}
+              max={1}
+              step={0.05}
+              value={playerState.muted ? 0 : playerState.volume}
+              onChange={(e) => sendControl("setVolume", parseFloat(e.target.value))}
+              aria-label="Volume"
+            />
+            <button
+              type="button"
+              className={`glass-btn glass-btn--sm ${volumeBoostEnabled ? "glass-btn--active" : ""}`}
+              title="Software Volume Boost (100%–200%)"
+              onClick={() => {
+                const next = !volumeBoostEnabled;
+                setVolumeBoostEnabled(next);
+                sendControl("setVolumeBoost", next ? 1.5 : 1.0);
+              }}
+            >
+              {volumeBoostEnabled ? "🔊 150%" : "100%"}
+            </button>
+          </div>
+
+          {/* Speed Selector */}
+          <div className="ctrl-group">
+            <label className="ctrl-label">Speed:</label>
+            <select
+              className="glass-select"
+              value={playerState.playbackRate}
+              onChange={(e) => sendControl("setSpeed", parseFloat(e.target.value))}
+              aria-label="Playback speed"
+            >
+              {PLAYBACK_SPEEDS.map((s) => (
+                <option key={s} value={s}>{s}×</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Advanced Toggles */}
+          <div className="ctrl-group">
+            <button type="button" className="glass-btn glass-btn--sm" onClick={() => setShowTransform(!showTransform)} title="Video Mode / Fit / Rotate">
+              📐 Mode
+            </button>
+            <button type="button" className="glass-btn glass-btn--sm" onClick={() => setShowEq(!showEq)} title="Audio Equalizer">
+              🎛 EQ
+            </button>
+            <label className="glass-btn glass-btn--sm file-upload-btn" title="Load Subtitles (.srt/.vtt)">
+              💬 Subs
+              <input type="file" accept=".vtt,.srt" onChange={handleSubtitleFileChange} style={{ display: "none" }} />
+            </label>
+            <button type="button" className="glass-btn glass-btn--sm" onClick={handleTakeScreenshot} title="Take Frame Screenshot">
+              📸
+            </button>
+          </div>
+
+          {/* Download & Fullscreen */}
+          <div className="ctrl-group ctrl-group--end">
+            <select
+              className="glass-select"
+              value={selectedQuality}
+              onChange={(e) => setSelectedQuality(e.target.value)}
+              aria-label="Quality selection"
+            >
+              <option value="1080p">1080p</option>
+              <option value="720p">720p</option>
+              <option value="480p">480p</option>
+            </select>
+
+            <button
+              type="button"
+              className="glass-btn glass-btn--primary"
+              disabled={source.isDrmProtected}
               onClick={handleDownload}
+              title={source.isDrmProtected ? "Protected media — download unavailable" : "Download to Fetcher"}
             >
               ↓ Download
             </button>
+
+            <button
+              type="button"
+              className="glass-btn"
+              title="Fullscreen (F)"
+              onClick={() => void videoRef.current?.requestFullscreen()}
+            >
+              ⛶
+            </button>
           </div>
         </div>
-      </footer>
+
+        {downloadMsg && <p className="download-status-bar">{downloadMsg}</p>}
+        {volumeBoostEnabled && <p className="volume-boost-warning">⚠️ Software volume boost active — may cause audio clipping</p>}
+
+        {/* Video Transform Panel */}
+        {showTransform && (
+          <div className="transform-panel">
+            <span>Fit:</span>
+            {(["contain", "cover", "fill", "original"] as const).map((fit) => (
+              <button
+                key={fit}
+                type="button"
+                className={`glass-btn glass-btn--sm ${transform.fit === fit ? "glass-btn--active" : ""}`}
+                onClick={() => sendControl("setVideoTransform", { fit })}
+              >
+                {fit}
+              </button>
+            ))}
+            <span className="sep">|</span>
+            <span>Rotate:</span>
+            {([0, 90, 180, 270] as const).map((rot) => (
+              <button
+                key={rot}
+                type="button"
+                className={`glass-btn glass-btn--sm ${transform.rotation === rot ? "glass-btn--active" : ""}`}
+                onClick={() => sendControl("setVideoTransform", { rotation: rot })}
+              >
+                {rot}°
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Equalizer Modal */}
+        {showEq && (
+          <div className="eq-panel">
+            <header className="eq-panel__header">
+              <span>Software 10-Band Equalizer</span>
+              <select
+                className="glass-select"
+                value={playerState.equalizer.preset}
+                onChange={(e) => {
+                  const p = e.target.value;
+                  const bands = EQ_PRESETS[p] ?? EQ_PRESETS.Flat;
+                  sendControl("setEqualizer", { enabled: true, preset: p, bands });
+                }}
+              >
+                {Object.keys(EQ_PRESETS).map((p) => (
+                  <option key={p} value={p}>{p}</option>
+                ))}
+              </select>
+              <button type="button" className="glass-btn glass-btn--sm" onClick={() => setShowEq(false)}>✕</button>
+            </header>
+            <div className="eq-bands">
+              {playerState.equalizer.bands.map((val, idx) => (
+                <div key={idx} className="eq-band">
+                  <input
+                    type="range"
+                    orient="vertical"
+                    min={-6}
+                    max={6}
+                    value={val}
+                    onChange={(e) => {
+                      const nextBands = [...playerState.equalizer.bands];
+                      nextBands[idx] = parseInt(e.target.value, 10);
+                      sendControl("setEqualizer", { enabled: true, preset: "Custom", bands: nextBands });
+                    }}
+                  />
+                  <span className="eq-band__label">{idx === 0 ? "60Hz" : idx === 4 ? "1kHz" : idx === 9 ? "15kHz" : `${idx + 1}`}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Media Info Modal */}
+        {showInfo && (
+          <div className="media-info-modal">
+            <header className="media-info-modal__header">
+              <h4>Media Information</h4>
+              <button type="button" className="glass-btn glass-btn--sm" onClick={() => setShowInfo(false)}>✕</button>
+            </header>
+            <table className="media-info-table">
+              <tbody>
+                <tr><td>Title</td><td>{source.title || "—"}</td></tr>
+                <tr><td>URL</td><td>{source.url}</td></tr>
+                <tr><td>Format</td><td>{source.format.toUpperCase()}</td></tr>
+                <tr><td>MIME Type</td><td>{source.mimeType}</td></tr>
+                <tr><td>DRM Status</td><td>{source.isDrmProtected ? "Protected (Widevine/FairPlay)" : "None"}</td></tr>
+                <tr><td>Decoder</td><td>{playerState.diagnostics.decoder}</td></tr>
+                <tr><td>Renderer</td><td>{playerState.diagnostics.renderer}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
