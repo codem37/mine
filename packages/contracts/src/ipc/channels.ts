@@ -11,6 +11,10 @@ export const IPC_CHANNELS = {
     minimizeWindow: "mine:shell:minimize-window",
     toggleMaximizeWindow: "mine:shell:toggle-maximize-window",
     closeWindow: "mine:shell:close-window",
+    getTabs: "mine:shell:get-tabs",
+  },
+  shield: {
+    getStats: "mine:shield:get-stats",
   },
 } as const;
 

@@ -59,6 +59,7 @@ export const ShieldStatsSchema = z.object({
   tabId: TabIdSchema.nullable(),
   blockedCount: z.number().int().min(0),
   engineState: z.enum(SHIELD_ENGINE_STATES),
+  lastError: z.string().nullable(),
 });
 
 export type ShieldStats = z.infer<typeof ShieldStatsSchema>;

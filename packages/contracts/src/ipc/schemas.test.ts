@@ -88,6 +88,7 @@ describe("ShieldStatsSchema", () => {
         tabId: "tab-1",
         blockedCount: 12,
         engineState: "ready",
+        lastError: null,
       }),
     ).not.toThrow();
   });
@@ -98,16 +99,46 @@ describe("ShieldStatsSchema", () => {
         tabId: null,
         blockedCount: 0,
         engineState: "loading",
+        lastError: null,
       }),
     ).not.toThrow();
   });
 
-  it("rejects negative counts and unknown states", () => {
+  it("carries lastError so a failed engine can say why", () => {
+    const parsed = ShieldStatsSchema.parse({
+      tabId: null,
+      blockedCount: 0,
+      engineState: "failed",
+      lastError: "required filter source 'easylist' unavailable",
+    });
+    expect(parsed.lastError).toBe(
+      "required filter source 'easylist' unavailable",
+    );
+  });
+
+  it("rejects negative counts, unknown states, and missing lastError", () => {
     expect(() =>
-      ShieldStatsSchema.parse({ tabId: "t", blockedCount: -1, engineState: "ready" }),
+      ShieldStatsSchema.parse({
+        tabId: "t",
+        blockedCount: -1,
+        engineState: "ready",
+        lastError: null,
+      }),
     ).toThrow();
     expect(() =>
-      ShieldStatsSchema.parse({ tabId: "t", blockedCount: 0, engineState: "99%" }),
+      ShieldStatsSchema.parse({
+        tabId: "t",
+        blockedCount: 0,
+        engineState: "99%",
+        lastError: null,
+      }),
+    ).toThrow();
+    expect(() =>
+      ShieldStatsSchema.parse({
+        tabId: "t",
+        blockedCount: 0,
+        engineState: "ready",
+      }),
     ).toThrow();
   });
 });
