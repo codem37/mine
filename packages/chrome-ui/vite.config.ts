@@ -1,11 +1,11 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { resolve } from "node:path";
-import { CHROME_HEIGHT, TELEMETRY_RAIL_WIDTH } from "@mine/contracts";
+import { CHROME_HEIGHT, TAB_RAIL_WIDTH } from "@mine/contracts";
 
 const injectedRoot = `:root {
   --hud-chrome-height: ${CHROME_HEIGHT}px;
-  --hud-rail-width: ${TELEMETRY_RAIL_WIDTH}px;
+  --hud-tab-rail-width: ${TAB_RAIL_WIDTH}px;
 }`;
 
 const contractsLayoutVars = {

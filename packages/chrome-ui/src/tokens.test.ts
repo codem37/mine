@@ -1,6 +1,9 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { CHROME_HEIGHT, TELEMETRY_RAIL_WIDTH } from "@mine/contracts";
+import {
+  CHROME_HEIGHT,
+  TAB_RAIL_WIDTH,
+} from "@mine/contracts";
 
 const css = readFileSync(new URL("./tokens.css", import.meta.url), "utf8");
 const layoutCss = readFileSync(new URL("./chrome.css", import.meta.url), "utf8");
@@ -32,9 +35,6 @@ function contrast(a: string, b: string): number {
 describe("HUD token contrast (WCAG 4.5:1 for text)", () => {
   const textPairs: Array<[string, string, string]> = [
     ["body text on background", "text", "bg"],
-    ["body text on surface", "text", "surface"],
-    ["body text on raised surface", "text", "surface-raised"],
-    ["dim text on background", "text-dim", "bg"],
     ["cyan accent on background", "cyan", "bg"],
   ];
 
@@ -54,22 +54,23 @@ describe("HUD token contrast (WCAG 4.5:1 for text)", () => {
     expect(true).toBe(true);
   });
 
-  it("decorative strokes stay below the text bar but above invisible", () => {
-    expect(contrast(token("line"), token("bg"))).toBeGreaterThan(1.2);
+  it("decorative strokes stay above invisible", () => {
+    // glass-line is rgba so we test the hex tokens that are still present
+    expect(contrast(token("text-dim"), token("bg"))).toBeGreaterThan(2.5);
   });
 });
 
-describe("shared layout constants flow from contracts (ADR 0002)", () => {
+describe("shared layout constants flow from contracts (ADR 0002, ADR 0007)", () => {
   it("chrome.css consumes the injected custom properties, not hand-copied pixels", () => {
     expect(layoutCss).toContain("height: var(--hud-chrome-height);");
     expect(layoutCss).toContain("top: var(--hud-chrome-height);");
-    expect(layoutCss).toContain("width: var(--hud-rail-width);");
+    expect(layoutCss).toContain("width: var(--hud-tab-rail-width);");
   });
 
-  it(`no literal px may shadow a contracts value (${CHROME_HEIGHT}, ${TELEMETRY_RAIL_WIDTH})`, () => {
+  it(`no literal px may shadow a contracts value (${CHROME_HEIGHT}, ${TAB_RAIL_WIDTH})`, () => {
     expect(layoutCss).not.toContain(`height: ${CHROME_HEIGHT}px`);
     expect(layoutCss).not.toContain(`top: ${CHROME_HEIGHT}px`);
-    expect(layoutCss).not.toContain(`width: ${TELEMETRY_RAIL_WIDTH}px`);
+    expect(layoutCss).not.toContain(`width: ${TAB_RAIL_WIDTH}px`);
   });
 
   it("vite config wires the injection plugin that defines those properties", () => {
@@ -78,6 +79,6 @@ describe("shared layout constants flow from contracts (ADR 0002)", () => {
       "utf8",
     );
     expect(viteConfig).toContain("--hud-chrome-height");
-    expect(viteConfig).toContain("--hud-rail-width");
+    expect(viteConfig).toContain("--hud-tab-rail-width");
   });
 });

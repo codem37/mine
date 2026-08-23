@@ -8,6 +8,16 @@ interface Props {
   activeTabId: TabId | null;
 }
 
+/** Extract a single emoji-letter from a URL's hostname as a favicon placeholder. */
+function siteInitial(url: string): string {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, "");
+    return host.charAt(0).toUpperCase();
+  } catch {
+    return "●";
+  }
+}
+
 export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
   return (
     <div className="tabstrip" role="tablist" aria-label="open tabs">
@@ -26,11 +36,9 @@ export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
             title={tab.title || tab.url}
             onClick={() => void window.mine.activateTab({ tabId: tab.id })}
           >
-            <span
-              className="tab__state"
-              aria-hidden="true"
-              data-state={loading ? "loading" : "idle"}
-            />
+            <span className="tab__icon" aria-hidden="true">
+              {siteInitial(tab.url)}
+            </span>
             <span className="tab__title">{tab.title || tab.url}</span>
             <span
               className="tab__close"
@@ -47,7 +55,7 @@ export function TabStrip({ tabs, activeTabId }: Props): JSX.Element {
         );
       })}
       <button
-        className="tabstrip__new tile"
+        className="tabstrip__new"
         aria-label="new tab"
         onClick={() => void window.mine.newTab()}
       >

@@ -7,7 +7,6 @@ function src(rel: string): string {
 
 const AUDITED = [
   ["dashboard", "../newtab.tsx"],
-  ["telemetry rail", "../components/TelemetryRail.tsx"],
   ["tab strip", "../components/TabStrip.tsx"],
   ["window controls", "../components/WindowControls.tsx"],
   ["app shell", "../App.tsx"],
@@ -46,10 +45,9 @@ describe("honest rendering: no hardcoded status strings (CLAUDE.md rule 7)", () 
   });
 });
 
-describe("one reusable stat component serves both views", () => {
-  it("newtab dashboard and telemetry rail are both fed by StatNode", () => {
+describe("one reusable stat component serves the dashboard", () => {
+  it("newtab dashboard is fed by StatNode", () => {
     expect(src("../newtab.tsx")).toContain("StatNode");
-    expect(src("../components/TelemetryRail.tsx")).toContain("StatNode");
   });
 
   it("StatNode is prop-driven: no IPC access inside the component", () => {

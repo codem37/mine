@@ -1,23 +1,24 @@
 :root {
-  --hud-bg: #0a0f14;
-  --hud-surface: #101820;
-  --hud-surface-raised: #16212b;
-  --hud-line: #223140;
-  --hud-cyan: #4dd8e6;
-  --hud-cyan-dim: #2a8a94;
+  --hud-bg: #0d1117;
+  --hud-surface: rgba(22, 27, 34, 0.65);
+  --hud-surface-raised: rgba(33, 39, 48, 0.7);
+  --hud-line: rgba(255, 255, 255, 0.08);
+  --hud-cyan: #58a6ff;
+  --hud-cyan-dim: #2a6cb5;
   --hud-amber: #f0b429;
   --hud-red: #f05d5d;
-  --hud-text: #d7e5ea;
-  --hud-text-dim: #8fa6b0;
+  --hud-text: #e6edf3;
+  --hud-text-dim: #8b949e;
 
-  --hud-radius: 6px;
-  --hud-chamfer: 10px;
+  --hud-radius: 10px;
+  --hud-chamfer: 14px;
   --hud-stroke: 1px;
 
-  --hud-glass-bg: rgba(16, 24, 32, 0.72);
-  --hud-glass-line: rgba(77, 216, 230, 0.28);
-  --hud-bevel-light: rgba(215, 229, 234, 0.16);
-  --hud-bevel-dark: rgba(0, 0, 0, 0.55);
+  --hud-glass-bg: rgba(22, 27, 34, 0.55);
+  --hud-glass-line: rgba(255, 255, 255, 0.1);
+  --hud-glass-blur: 24px;
+  --hud-bevel-light: rgba(255, 255, 255, 0.08);
+  --hud-bevel-dark: rgba(0, 0, 0, 0.4);
 
   --hud-dur-fast: 120ms;
   --hud-dur-move: 180ms;
@@ -45,6 +46,7 @@ body {
   font-family:
     "Segoe UI",
     system-ui,
+    -apple-system,
     sans-serif;
   font-size: 13px;
   overflow: hidden;
@@ -54,8 +56,8 @@ body {
 button {
   font: inherit;
   color: inherit;
-  background: var(--hud-surface);
-  border: var(--hud-stroke) solid var(--hud-line);
+  background: transparent;
+  border: var(--hud-stroke) solid transparent;
   border-radius: var(--hud-radius);
   padding: 3px 9px;
   cursor: pointer;

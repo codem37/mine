@@ -1,8 +1,14 @@
+/* ============================================================
+   mine chrome — glassmorphism shell
+   ============================================================ */
+
 .hud {
   display: flex;
   flex-direction: column;
   height: 100vh;
 }
+
+/* ---- Titlebar ---- */
 
 .titlebar {
   position: fixed;
@@ -10,134 +16,74 @@
   height: var(--hud-chrome-height);
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 0 6px;
+  gap: 10px;
+  padding: 0 10px;
   background: var(--hud-surface);
-  border-bottom: var(--hud-stroke) solid var(--hud-line);
+  backdrop-filter: blur(var(--hud-glass-blur));
+  -webkit-backdrop-filter: blur(var(--hud-glass-blur));
+  border-bottom: var(--hud-stroke) solid var(--hud-glass-line);
   -webkit-app-region: drag;
+  z-index: 10;
 }
 
 .titlebar button,
-.titlebar input,
-.titlebar .tab {
+.titlebar input {
   -webkit-app-region: no-drag;
 }
 
-.brand {
-  font-size: 11px;
-  letter-spacing: 3px;
-  color: var(--hud-cyan-dim);
-  padding-left: 4px;
-}
-
 .drag-strip {
-  flex: 0 0 12px;
+  flex: 0 0 8px;
 }
 
-.tabstrip {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 4px;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 0;
-}
+/* ---- Glass button (nav + window controls) ---- */
 
-.tab {
+.glass-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 50%;
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  background: var(--hud-glass-bg);
+  backdrop-filter: blur(var(--hud-glass-blur));
+  -webkit-backdrop-filter: blur(var(--hud-glass-blur));
+  color: var(--hud-text);
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  max-width: 100%;
-  padding: 4px 8px;
-  background: var(--hud-bg);
-  border-color: var(--hud-line);
+  justify-content: center;
+  font-size: 16px;
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+}
+
+.glass-btn:hover {
+  background: var(--hud-surface-raised);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.glass-btn:active {
+  transform: translateY(0);
   opacity: 0.85;
 }
 
-.tab--active {
-  background: var(--hud-surface-raised);
-  border-color: var(--hud-cyan-dim);
-  opacity: 1;
-  transform: translateX(2px);
+.glass-btn:disabled {
+  opacity: 0.3;
+  cursor: default;
 }
 
-.tab__state {
-  flex: 0 0 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--hud-text-dim);
-  opacity: 0.4;
+.glass-btn:disabled:hover {
+  transform: none;
+  background: var(--hud-glass-bg);
+  border-color: var(--hud-glass-line);
 }
 
-.tab--loading .tab__state {
-  background: var(--hud-amber);
-  opacity: 1;
-}
-
-.tab--active .tab__state {
-  background: var(--hud-cyan);
-  opacity: 1;
-}
-
-.tab__title {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.tab__close {
-  color: var(--hud-text-dim);
-  padding: 0 2px;
-}
-
-.tab__close:hover {
-  color: var(--hud-red);
-}
-
-.tabstrip__new {
-  padding: 2px 8px;
-}
+/* ---- Nav controls ---- */
 
 .navcontrols {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
-/* Three-layer skeuomorphic orb: outer rim light, gradient face, glyph. */
-.orb {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border-radius: 50%;
-  border-color: var(--hud-line);
-  background:
-    radial-gradient(
-      circle at 32% 28%,
-      var(--hud-surface-raised),
-      var(--hud-bg) 78%
-    );
-  box-shadow:
-    inset 0 1px 0 var(--hud-bevel-light),
-    inset 0 -2px 3px var(--hud-bevel-dark),
-    0 0 0 1px rgba(0, 0, 0, 0.35);
-}
-
-.orb:active {
-  transform: translateY(1px);
-}
-
-.orb:disabled {
-  opacity: 0.35;
-}
-
-.orb:disabled:hover {
-  transform: none;
-}
-
-.navcontrols .orb {
-  color: var(--hud-text);
-}
+/* ---- Address bar ---- */
 
 .addressbar {
   flex: 1;
@@ -151,138 +97,215 @@
   width: 100%;
   background: var(--hud-glass-bg);
   border: var(--hud-stroke) solid var(--hud-glass-line);
-  border-radius: var(--hud-chamfer);
+  border-radius: 20px;
   color: var(--hud-text);
   font: inherit;
-  padding: 5px 34px 5px 10px;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  font-size: 14px;
+  padding: 7px 40px 7px 14px;
+  backdrop-filter: blur(var(--hud-glass-blur));
+  -webkit-backdrop-filter: blur(var(--hud-glass-blur));
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+}
+
+.addressbar input::placeholder {
+  color: var(--hud-text-dim);
 }
 
 .addressbar input:focus-visible {
   outline: none;
   border-color: var(--hud-cyan);
   box-shadow:
-    0 0 8px var(--hud-cyan-dim),
+    0 0 0 2px rgba(88, 166, 255, 0.2),
     inset 0 1px 0 var(--hud-bevel-light);
 }
 
 .addressbar__shield {
   position: absolute;
-  right: 4px;
+  right: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   padding: 0;
   border-radius: 50%;
+  border: none;
+  background: transparent;
   color: var(--hud-cyan);
-  box-shadow:
-    0 0 6px var(--hud-cyan-dim),
-    inset 0 1px 0 var(--hud-bevel-light);
+  opacity: 0.85;
 }
 
-/* Same control, different state: the glyph stays, the light goes out. */
+.addressbar__shield:hover {
+  opacity: 1;
+  transform: none;
+}
+
 .addressbar__shield--off {
   color: var(--hud-text-dim);
-  box-shadow: none;
-  opacity: 0.55;
+  opacity: 0.45;
 }
+
+/* ---- Window controls ---- */
 
 .wincontrols {
   display: flex;
-  gap: 4px;
-}
-
-.wincontrols .orb {
-  color: var(--hud-text);
+  gap: 6px;
 }
 
 .wincontrols__close:hover {
-  background:
-    radial-gradient(
-      circle at 32% 28%,
-      var(--hud-red),
-      var(--hud-bg) 140%
-    );
-  color: var(--hud-bg);
+  background: var(--hud-red);
+  border-color: var(--hud-red);
+  color: #fff;
 }
 
-/* Icon tile: the new-tab face, shared language with dash nodes. */
-.tile {
-  background:
-    linear-gradient(
-      160deg,
-      var(--hud-surface-raised),
-      var(--hud-bg)
-    );
-  border-color: var(--hud-line);
-  box-shadow:
-    inset 0 1px 0 var(--hud-bevel-light),
-    inset 0 -2px 3px var(--hud-bevel-dark);
-}
+/* ---- User avatar placeholder ---- */
 
-.tile:hover {
-  border-color: var(--hud-cyan-dim);
-}
-
-.rail__card {
-  padding: 8px;
+.avatar {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
   background: var(--hud-glass-bg);
   border: var(--hud-stroke) solid var(--hud-glass-line);
-  border-radius: var(--hud-chamfer);
-  box-shadow:
-    inset 0 1px 0 var(--hud-bevel-light),
-    0 0 10px rgba(42, 138, 148, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--hud-text-dim);
+  flex-shrink: 0;
 }
 
-.rail {
+/* ---- Left tab rail ---- */
+
+.rail--tabs {
   position: fixed;
   top: var(--hud-chrome-height);
-  right: 0;
+  left: 0;
   bottom: 0;
-  width: var(--hud-rail-width);
+  width: var(--hud-tab-rail-width);
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   padding: 10px;
   background: var(--hud-surface);
-  border-left: var(--hud-stroke) solid var(--hud-line);
+  backdrop-filter: blur(var(--hud-glass-blur));
+  -webkit-backdrop-filter: blur(var(--hud-glass-blur));
+  border-right: var(--hud-stroke) solid var(--hud-glass-line);
   overflow-y: auto;
   overflow-x: hidden;
+  z-index: 9;
 }
 
-.rail__section {
+/* ---- Tab strip (vertical list) ---- */
+
+.tabstrip {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
   min-height: 0;
 }
 
-.rail__heading {
-  font-size: 10px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: var(--hud-cyan-dim);
-  margin: 6px 0 4px;
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid transparent;
+  border-radius: var(--hud-radius);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  opacity: 0.8;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
 }
 
-.rail__grid {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 2px 10px;
-  margin: 0;
+.tab:hover {
+  background: var(--hud-surface-raised);
+  opacity: 0.95;
+  transform: none;
 }
 
-.rail__grid dt {
+.tab--active {
+  background: var(--hud-surface-raised);
+  border-color: var(--hud-cyan);
+  opacity: 1;
+  box-shadow:
+    inset 0 1px 0 var(--hud-bevel-light),
+    0 0 8px rgba(88, 166, 255, 0.15);
+}
+
+.tab__icon {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
   color: var(--hud-text-dim);
 }
 
-.rail__grid dd {
-  margin: 0;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
+.tab--loading .tab__icon {
+  color: var(--hud-amber);
 }
+
+.tab--active .tab__icon {
+  color: var(--hud-cyan);
+  border-color: rgba(88, 166, 255, 0.3);
+}
+
+.tab__title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  font-size: 12px;
+}
+
+.tab__close {
+  color: var(--hud-text-dim);
+  padding: 0 2px;
+  opacity: 0;
+  font-size: 12px;
+}
+
+.tab:hover .tab__close {
+  opacity: 1;
+}
+
+.tab__close:hover {
+  color: var(--hud-red);
+}
+
+.tabstrip__new {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px;
+  background: var(--hud-glass-bg);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: var(--hud-radius);
+  color: var(--hud-text-dim);
+  font-size: 16px;
+  box-shadow: inset 0 1px 0 var(--hud-bevel-light);
+}
+
+.tabstrip__new:hover {
+  background: var(--hud-surface-raised);
+  color: var(--hud-text);
+  border-color: rgba(255, 255, 255, 0.15);
+  transform: none;
+}
+
+/* ---- Stat nodes (used only in newtab dashboard now) ---- */
 
 .stat__value {
   color: var(--hud-text);
