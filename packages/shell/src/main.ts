@@ -8,6 +8,7 @@ import { stripTrackingParams } from "@mine/shield";
 import { DownloadEngine } from "@mine/fetcher";
 import { MediaEngine } from "@mine/media";
 import { SearchEngine } from "@mine/search";
+import { SafetyEngine } from "@mine/safety";
 import { TabManager } from "./tab-manager.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
@@ -134,9 +135,15 @@ function bootstrap(): void {
   });
 
   const searchEngine = new SearchEngine();
+  const safetyEngine = new SafetyEngine();
 
   defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
     mediaEngine.inspectRequest({ url: details.url });
+    const verdict = safetyEngine.evaluateUrl(details.url);
+    if (verdict.state === "blocked") {
+      callback({ cancel: true });
+      return;
+    }
     callback({});
   });
 
@@ -185,6 +192,10 @@ function bootstrap(): void {
     onMediaControl: (action: string, value?: unknown) => mediaEngine.controlPlayer(action, value),
     onSearchQuery: (req: import("@mine/contracts").SearchRequest) => searchEngine.search(req),
     onSearchSuggest: (query: string, isPrivate?: boolean) => searchEngine.getSuggestions(query, isPrivate),
+    getSecurityVerdict: (url: string) => safetyEngine.evaluateUrl(url),
+    getProtectionCenterStats: () => safetyEngine.getProtectionCenterStats(18, 11),
+    addSafetyException: (domain: string, durationMinutes?: number) => safetyEngine.addException(domain, durationMinutes),
+    getSecurityEvents: () => safetyEngine.getEvents(),
   });
 
   win.on("maximize", emitWindowState);

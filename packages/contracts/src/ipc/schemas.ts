@@ -384,5 +384,50 @@ export const SuggestResponseSchema = z.object({
   suggestions: z.array(SuggestionItemSchema),
 });
 
+export const ThreatCategorySchema = z.enum([
+  "phishing",
+  "malware",
+  "scam",
+  "lookalike",
+  "deceptive",
+  "dangerous-download",
+  "malicious-redirect",
+  "suspicious-resource",
+  "certificate",
+  "connection",
+  "unknown",
+]);
+
+export const SafetyStateSchema = z.enum([
+  "safe",
+  "informational",
+  "suspicious",
+  "dangerous",
+  "blocked",
+  "unknown",
+  "database-stale",
+  "database-unavailable",
+]);
+
+export const SafetyActionSchema = z.enum(["allow", "warn", "block", "quarantine"]);
+
+export const SecurityVerdictSchema = z.object({
+  state: SafetyStateSchema,
+  category: ThreatCategorySchema,
+  severity: z.union([z.literal(0), z.literal(1), z.literal(2), z.literal(3), z.literal(4)]),
+  source: z.string(),
+  reason: z.string().optional(),
+  url: z.string(),
+  timestamp: z.number(),
+  action: SafetyActionSchema,
+  expires: z.number().optional(),
+  intendedUrl: z.string().optional(),
+});
+
+export const AddExceptionRequestSchema = z.object({
+  domain: z.string().min(1),
+  durationMinutes: z.number().optional(),
+});
+
 
 

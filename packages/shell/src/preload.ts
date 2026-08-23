@@ -145,6 +145,14 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.search.query, payload),
   getSuggestions: (payload: import("@mine/contracts").SuggestRequest): Promise<Result<import("@mine/contracts").SuggestResponse>> =>
     ipcRenderer.invoke(IPC_CHANNELS.search.suggest, payload),
+  getSecurityVerdict: (payload: import("@mine/contracts").NavigateRequest): Promise<Result<import("@mine/contracts").SecurityVerdict>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.safety.getVerdict, payload),
+  getProtectionStats: (): Promise<Result<import("@mine/contracts").ProtectionCenterStats>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.safety.getProtectionStats, {}),
+  addSafetyException: (payload: import("@mine/contracts").AddExceptionRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.safety.addException, payload),
+  getSecurityEvents: (): Promise<Result<readonly import("@mine/contracts").SecurityEvent[]>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.safety.getEvents, {}),
 };
 
 export type MineBridge = typeof api;

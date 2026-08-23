@@ -46,6 +46,14 @@ export const IPC_CHANNELS = {
     history: "mine:search:history",
     getDiagnostics: "mine:search:get-diagnostics",
   },
+  safety: {
+    getVerdict: "mine:safety:get-verdict",
+    getProtectionStats: "mine:safety:get-protection-stats",
+    addException: "mine:safety:add-exception",
+    removeException: "mine:safety:remove-exception",
+    getEvents: "mine:safety:get-events",
+    clearEvents: "mine:safety:clear-events",
+  },
 } as const;
 
 export const IPC_EVENTS = {

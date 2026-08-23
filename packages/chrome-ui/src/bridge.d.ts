@@ -55,6 +55,10 @@ export interface MineBridge {
   onPlayerStateChanged(cb: (payload: import("@mine/contracts").PlayerState) => void): () => void;
   search(payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>>;
   getSuggestions(payload: import("@mine/contracts").SuggestRequest): Promise<Result<import("@mine/contracts").SuggestResponse>>;
+  getSecurityVerdict(payload: import("@mine/contracts").NavigateRequest): Promise<Result<import("@mine/contracts").SecurityVerdict>>;
+  getProtectionStats(): Promise<Result<import("@mine/contracts").ProtectionCenterStats>>;
+  addSafetyException(payload: import("@mine/contracts").AddExceptionRequest): Promise<InvokeResult>;
+  getSecurityEvents(): Promise<Result<readonly import("@mine/contracts").SecurityEvent[]>>;
 }
 
 declare global {

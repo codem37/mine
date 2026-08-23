@@ -1,6 +1,7 @@
 import { ipcMain } from "electron";
 import {
   AddDownloadRequestSchema,
+  AddExceptionRequestSchema,
   DeleteFileRequestSchema,
   DownloadIdRequestSchema,
   IPC_CHANNELS,
@@ -32,6 +33,10 @@ export interface IpcDeps {
   readonly onMediaControl?: (action: string, value?: unknown) => void;
   readonly onSearchQuery?: (req: import("@mine/contracts").SearchRequest) => Promise<unknown>;
   readonly onSearchSuggest?: (query: string, isPrivate?: boolean) => unknown;
+  readonly getSecurityVerdict?: (url: string) => unknown;
+  readonly getProtectionCenterStats?: () => unknown;
+  readonly addSafetyException?: (domain: string, durationMinutes?: number) => void;
+  readonly getSecurityEvents?: () => unknown;
 }
 
 export function registerIpcHandlers(
@@ -256,5 +261,31 @@ export function registerIpcHandlers(
     if (!payload.ok) return payload;
     const items = deps.onSearchSuggest?.(payload.value.query, payload.value.isPrivate) ?? [];
     return { ok: true, value: { query: payload.value.query, suggestions: items } } as const;
+  });
+
+  // Safety Handlers
+  ipcMain.handle(IPC_CHANNELS.safety.getVerdict, async (_event, raw: unknown) => {
+    const payload = parsePayload(NavigateRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getSecurityVerdict?.(payload.value.url) ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.safety.getProtectionStats, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getProtectionCenterStats?.() ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.safety.addException, async (_event, raw: unknown) => {
+    const payload = parsePayload(AddExceptionRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.addSafetyException?.(payload.value.domain, payload.value.durationMinutes);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.safety.getEvents, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getSecurityEvents?.() ?? [] } as const;
   });
 }
