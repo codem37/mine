@@ -1,8 +1,12 @@
 import type { JSX } from "react";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { StatNode } from "./components/StatNode.js";
+import { useLiveStats } from "./use-live-stats.js";
 import "./tokens.css";
 import "./dash.css";
+
+const PLANNED_LABEL = "planned";
 
 function nodePosition(index: number, total: number, radius: number): { x: number; y: number } {
   const angle = -Math.PI / 2 + (index / Math.max(1, total)) * Math.PI * 2;
@@ -12,7 +16,6 @@ function nodePosition(index: number, total: number, radius: number): { x: number
 interface DashNode {
   readonly label: string;
   readonly hint?: string;
-  readonly phase?: string;
   readonly action?: () => void;
 }
 
@@ -21,11 +24,40 @@ const LIVE_NODES: readonly DashNode[] = [
 ];
 
 const FUTURE_NODES: readonly DashNode[] = [
-  { label: "downloads", phase: "P4" },
-  { label: "search", phase: "P6" },
-  { label: "safety", phase: "P7" },
-  { label: "ipfs", phase: "P8" },
+  { label: "downloads" },
+  { label: "search" },
+  { label: "safety" },
+  { label: "ipfs" },
 ];
+
+function LiveStatsStrip(): JSX.Element {
+  const { tabs, shield } = useLiveStats();
+  const active =
+    tabs?.tabs.find((t) => t.id === tabs.activeTabId) ?? null;
+  return (
+    <dl className="dash__stats" aria-label="live browser stats">
+      <StatNode
+        label="tabs open"
+        value={tabs === null ? null : String(tabs.tabs.length)}
+        testId="dash-tabs"
+      />
+      <StatNode
+        label="active tab"
+        value={active === null ? null : active.title || active.url}
+        testId="dash-active-tab"
+      />
+      <StatNode
+        label="shield blocked"
+        value={shield === null ? null : String(shield.blockedCount)}
+        tone={shield?.engineState === "failed" ? "error" : "ok"}
+        detail={
+          shield?.engineState === "failed" ? (shield.lastError ?? null) : null
+        }
+        testId="dash-blocked"
+      />
+    </dl>
+  );
+}
 
 export function NewTabDashboard(): JSX.Element {
   const all = [...LIVE_NODES, ...FUTURE_NODES];
@@ -66,14 +98,15 @@ export function NewTabDashboard(): JSX.Element {
               <text x={pos.x} y={pos.y - 2} textAnchor="middle">
                 {node.label}
               </text>
-              <text x={pos.x} y={pos.y + 14} textAnchor="middle" className="dash__phase">
-                {node.phase}
+              <text x={pos.x} y={pos.y + 14} textAnchor="middle" className="dash__planned">
+                {PLANNED_LABEL}
               </text>
             </g>
           );
         })}
       </svg>
-      <p className="dash__note">type an address in the bar above — dimmed nodes arrive in later phases</p>
+      <LiveStatsStrip />
+      <p className="dash__note">type an address in the bar above — dimmed nodes are planned, not built</p>
     </main>
   );
 }

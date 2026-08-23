@@ -1,49 +1,69 @@
-import type { ShieldStats, Telemetry } from "@mine/contracts";
+import type { ShieldEngineState, ShieldStats, Telemetry } from "@mine/contracts";
 import type { JSX } from "react";
+import { StatNode } from "./StatNode.js";
+import type { StatTone } from "./StatNode.js";
 
 interface Props {
   telemetry: Telemetry | null;
   shield: ShieldStats | null;
 }
 
+const ENGINE_TONE: Record<ShieldEngineState, StatTone> = {
+  ready: "ok",
+  loading: "warn",
+  failed: "error",
+  uninitialised: "neutral",
+};
+
+function rounded(value: number | null | undefined): string | null {
+  if (value === null || value === undefined) return null;
+  return String(Math.round(value * 10) / 10);
+}
+
 export function TelemetryRail({ telemetry, shield }: Props): JSX.Element {
-  const engine = shield?.engineState ?? "uninitialised";
+  const engineState: ShieldEngineState | null =
+    shield?.engineState ?? null;
   return (
     <aside className="rail" aria-label="telemetry">
       <h2 className="rail__heading">telemetry</h2>
       <dl className="rail__grid">
-        <dt>cpu</dt>
-        <dd data-testid="cpu">{fmt(telemetry?.cpuPercent, "%")}</dd>
-        <dt>ram</dt>
-        <dd>{fmt(telemetry?.ramMb, " MB")}</dd>
-        <dt>net/min</dt>
-        <dd>
-          {telemetry === null ? "…" : String(telemetry.netRequestsPerMinute)}
-        </dd>
-        <dt>gpu</dt>
-        <dd>n/a</dd>
+        <StatNode
+          label="cpu"
+          value={rounded(telemetry?.cpuPercent)}
+          unit="%"
+          testId="cpu"
+        />
+        <StatNode label="ram" value={rounded(telemetry?.ramMb)} unit=" MB" />
+        <StatNode
+          label="net/min"
+          value={telemetry === null ? null : String(telemetry.netRequestsPerMinute)}
+          testId="net"
+        />
+        <StatNode
+          label="gpu"
+          value={null}
+          detail={
+            telemetry === null ? null : "gpu sampling not built yet"
+          }
+        />
       </dl>
 
       <h2 className="rail__heading">shield</h2>
-      <p className="rail__shield">
-        <span
-          className={
-            "rail__state" +
-            (engine === "ready" ? "" : ` rail__state--${engine}`)
-          }
-        >
-          {engine}
-        </span>
-        <span className="rail__count" data-testid="blocked">
-          {shield?.blockedCount ?? 0}
-        </span>
-        blocked
-      </p>
+      <dl className="rail__grid">
+        <StatNode
+          label="engine"
+          value={engineState}
+          tone={engineState === null ? "neutral" : ENGINE_TONE[engineState]}
+          detail={shield?.lastError ?? null}
+          testId="engine-state"
+        />
+        <StatNode
+          label="blocked"
+          value={shield === null ? null : String(shield.blockedCount)}
+          size="large"
+          testId="blocked"
+        />
+      </dl>
     </aside>
   );
-}
-
-function fmt(value: number | null | undefined, unit: string): string {
-  if (value === null || value === undefined) return "…";
-  return `${Math.round(value * 10) / 10}${unit}`;
 }

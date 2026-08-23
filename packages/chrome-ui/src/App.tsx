@@ -1,27 +1,23 @@
 import { useEffect, useRef, useState } from "react";
-import type { ShieldStats, TabsUpdatedPayload, Telemetry, WindowState } from "@mine/contracts";
+import type { Telemetry, WindowState } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
 import { WindowControls } from "./components/WindowControls.js";
 import { TelemetryRail } from "./components/TelemetryRail.js";
+import { useLiveStats } from "./use-live-stats.js";
 
 const mine = window.mine;
 
 export function App(): JSX.Element {
-  const [tabsPayload, setTabs] = useState<TabsUpdatedPayload>({
-    tabs: [],
-    activeTabId: null,
-  });
+  const { tabs: liveTabs, shield } = useLiveStats();
   const [maximized, setMaximized] = useState(false);
   const [telemetry, setTelemetry] = useState<Telemetry | null>(null);
-  const [shield, setShield] = useState<ShieldStats | null>(null);
 
-  useEffect(() => mine.onTabsUpdated(setTabs), []);
   useEffect(() => mine.onWindowState((state) => setMaximized(state.maximized)), []);
   useEffect(() => mine.onTelemetry(setTelemetry), []);
-  useEffect(() => mine.onShieldStats(setShield), []);
 
+  const tabsPayload = liveTabs ?? { tabs: [], activeTabId: null };
   const active =
     tabsPayload.tabs.find((t) => t.id === tabsPayload.activeTabId) ?? null;
 

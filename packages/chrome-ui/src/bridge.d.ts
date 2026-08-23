@@ -20,6 +20,8 @@ export interface MineBridge {
   goForward(payload: TabIdRequest): Promise<InvokeResult>;
   reload(payload: TabIdRequest): Promise<InvokeResult>;
   stop(payload: TabIdRequest): Promise<InvokeResult>;
+  getTabs(): Promise<Result<TabsUpdatedPayload>>;
+  getShieldStats(): Promise<Result<ShieldStats>>;
   minimizeWindow(): Promise<InvokeResult>;
   toggleMaximizeWindow(): Promise<InvokeResult>;
   closeWindow(): Promise<InvokeResult>;

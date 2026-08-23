@@ -67,13 +67,59 @@
   fill: var(--hud-surface);
 }
 
-.dash__phase {
+.dash__planned {
   fill: var(--hud-amber);
   font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.dash__stats {
+  display: flex;
+  gap: 28px;
+  margin: 14px 0 0;
+}
+
+.dash__stats dt {
+  color: var(--hud-text-dim);
+  font-size: 11px;
+}
+
+.dash__stats dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  text-align: left;
+}
+
+.dash__stats .stat__value {
+  font-size: 16px;
+}
+
+.dash__stats dd .stat__value {
+  display: inline-block;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
 }
 
 .dash__note {
   color: var(--hud-text-dim);
   font-size: 11px;
   margin-top: 12px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dash__node circle,
+  .dash__node,
+  .dash__stats .stat__value,
+  .dash__stats .stat__pending {
+    transition: none;
+    animation: none;
+  }
+
+  .dash__node:hover circle,
+  .dash__node:focus-visible circle {
+    transform: none;
+  }
 }
