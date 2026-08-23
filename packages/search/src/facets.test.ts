@@ -1,22 +1,39 @@
 import { describe, expect, it } from "vitest";
-import { inferCategory, extractFacets } from "./facets.js";
+import { inferDynamicFacets } from "./facets.js";
+import type { SearchResult } from "@mine/contracts";
 
-describe("Search Facets & Schema.org Inference", () => {
-  it("infers category based on URL and text hints", () => {
-    expect(inferCategory("https://github.com/facebook/react", "React", "Code repo")).toBe("code");
-    expect(inferCategory("https://youtube.com/watch?v=123", "Video", "Watch online")).toBe("video");
-    expect(inferCategory("https://en.wikipedia.org/wiki/Electron", "Electron", "Article")).toBe("article");
-  });
-
-  it("extracts and counts category facets", () => {
-    const results = [
-      { id: "1", url: "https://github.com/a", title: "A", snippet: "a", engine: "g", score: 1 },
-      { id: "2", url: "https://github.com/b", title: "B", snippet: "b", engine: "g", score: 0.9 },
-      { id: "3", url: "https://youtube.com/c", title: "C", snippet: "c", engine: "g", score: 0.8 },
+describe("Dynamic Facet Inference", () => {
+  it("infers brand, RAM, CPU, and price range facets for shopping results", () => {
+    const results: SearchResult[] = [
+      {
+        id: "1",
+        url: "https://example.com/laptop1",
+        title: "Lenovo Laptop",
+        snippet: "Intel i7, 16GB RAM",
+        engine: "google",
+        score: 0.9,
+        type: "product",
+        domain: "example.com",
+        price: 75000,
+        specs: { brand: "Lenovo", ram: "16 GB", cpu: "Intel i7" },
+      },
+      {
+        id: "2",
+        url: "https://example.com/laptop2",
+        title: "ASUS Laptop",
+        snippet: "Ryzen 7, 16GB RAM",
+        engine: "bing",
+        score: 0.8,
+        type: "product",
+        domain: "example.com",
+        price: 80000,
+        specs: { brand: "ASUS", ram: "16 GB", cpu: "Ryzen 7" },
+      },
     ];
 
-    const facets = extractFacets(results);
-    expect(facets).toContainEqual({ name: "code", count: 2 });
-    expect(facets).toContainEqual({ name: "video", count: 1 });
+    const facets = inferDynamicFacets(results, "shopping");
+    expect(facets.find((f) => f.id === "brand")).toBeDefined();
+    expect(facets.find((f) => f.id === "ram")).toBeDefined();
+    expect(facets.find((f) => f.id === "price")?.range).toEqual([75000, 80000]);
   });
 });

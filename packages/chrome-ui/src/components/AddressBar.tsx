@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ShieldStats, TabId } from "@mine/contracts";
 import type { JSX } from "react";
+import { AddressBarSuggestions } from "./AddressBarSuggestions.js";
 
 interface Props {
   readonly activeTabId: TabId | null;
@@ -31,6 +32,7 @@ function ShieldGlyph(): JSX.Element {
 
 export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }: Props): JSX.Element {
   const [value, setValue] = useState(activeUrl);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const focused = useRef(false);
   const shieldOn = shield?.enabled !== false;
 
@@ -46,21 +48,29 @@ export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }:
     if (!focused.current) setValue(activeUrl);
   }, [activeUrl]);
 
+  const handleNavigate = (rawUrl: string): void => {
+    if (activeTabId === null) return;
+    const raw = rawUrl.trim();
+    if (raw === "") return;
+
+    // Direct URL check vs Search Query
+    const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) || raw.includes(".")
+      ? (/^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`)
+      : `https://duckduckgo.com/?q=${encodeURIComponent(raw)}`;
+
+    setShowSuggestions(false);
+    void window.mine.navigate({ tabId: activeTabId, url }).then((result) => {
+      if (!result.ok) console.error(result.error.message);
+    });
+  };
+
   return (
     <form
       className="addressbar"
       data-testid="addressbar"
       onSubmit={(event) => {
         event.preventDefault();
-        if (activeTabId === null) return;
-        const raw = value.trim();
-        if (raw === "") return;
-        const url = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw)
-          ? raw
-          : `https://${raw}`;
-        void window.mine.navigate({ tabId: activeTabId, url }).then((result) => {
-          if (!result.ok) console.error(result.error.message);
-        });
+        handleNavigate(value);
       }}
     >
       <button
@@ -80,13 +90,31 @@ export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }:
         placeholder={activeTabId === null ? "no active tab" : "search or address"}
         onFocus={() => {
           focused.current = true;
+          setShowSuggestions(true);
         }}
         onBlur={() => {
-          focused.current = false;
-          setValue(activeUrl);
+          setTimeout(() => {
+            focused.current = false;
+            setShowSuggestions(false);
+            setValue(activeUrl);
+          }, 200);
         }}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          setValue(e.target.value);
+          setShowSuggestions(true);
+        }}
       />
+
+      {showSuggestions && value.trim().length > 0 ? (
+        <AddressBarSuggestions
+          query={value}
+          onClose={() => setShowSuggestions(false)}
+          onSelect={(item) => {
+            if (item.url) handleNavigate(item.url);
+            else handleNavigate(item.text);
+          }}
+        />
+      ) : null}
 
       <button
         type="button"

@@ -183,8 +183,8 @@ function bootstrap(): void {
     },
     getMediaState: () => mediaEngine.getPlayerState(),
     onMediaControl: (action: string, value?: unknown) => mediaEngine.controlPlayer(action, value),
-    onSearchQuery: (query: string, category?: string, page?: number) =>
-      searchEngine.search({ query, category, page }),
+    onSearchQuery: (req: import("@mine/contracts").SearchRequest) => searchEngine.search(req),
+    onSearchSuggest: (query: string, isPrivate?: boolean) => searchEngine.getSuggestions(query, isPrivate),
   });
 
   win.on("maximize", emitWindowState);

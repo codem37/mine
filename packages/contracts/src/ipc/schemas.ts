@@ -267,10 +267,20 @@ export const MediaItemDownloadRequestSchema: z.ZodType<MediaItemDownloadRequest>
 
 export type { SearchRequest, SearchResponse, SearchResult, SearchFacet } from "../types/search.js";
 
-export const SearchRequestSchema = z.object({
-  query: z.string().min(1),
-  category: z.string().optional(),
-  page: z.number().min(1).optional(),
+export const SearchModeSchema = z.enum(["all", "images", "videos", "news", "shopping", "academic"]);
+
+export const SearchResultTypeSchema = z.enum(["web", "image", "video", "news", "product", "academic"]);
+
+export const ProductSpecsSchema = z.object({
+  brand: z.string().optional(),
+  cpu: z.string().optional(),
+  ram: z.string().optional(),
+  storage: z.string().optional(),
+  gpu: z.string().optional(),
+  display: z.string().optional(),
+  size: z.string().optional(),
+  color: z.string().optional(),
+  material: z.string().optional(),
 });
 
 export const SearchResultSchema = z.object({
@@ -280,21 +290,98 @@ export const SearchResultSchema = z.object({
   snippet: z.string(),
   engine: z.string(),
   score: z.number(),
+  type: SearchResultTypeSchema,
+  domain: z.string(),
   category: z.string().optional(),
   publishedDate: z.string().optional(),
+  favicon: z.string().optional(),
+  thumbnail: z.string().optional(),
+  sourceCount: z.number().optional(),
+  badges: z.array(z.string()).optional(),
+  price: z.number().optional(),
+  currency: z.string().optional(),
+  seller: z.string().optional(),
+  rating: z.number().optional(),
+  reviewCount: z.number().optional(),
+  availability: z.string().optional(),
+  specs: ProductSpecsSchema.optional(),
+  authors: z.array(z.string()).optional(),
+  year: z.number().optional(),
+  journal: z.string().optional(),
+  doi: z.string().optional(),
+  citationCount: z.number().optional(),
+  pdfUrl: z.string().optional(),
+  durationSeconds: z.number().optional(),
+  resolution: z.string().optional(),
+  mediaStreamUrl: z.string().optional(),
 });
 
-export const SearchFacetSchema = z.object({
-  name: z.string().min(1),
-  count: z.number().min(0),
+export const FacetValueSchema = z.object({
+  label: z.string(),
+  count: z.number(),
+  value: z.string(),
+});
+
+export const DynamicFacetSchema = z.object({
+  id: z.string().min(1),
+  label: z.string().min(1),
+  type: z.enum(["checkbox", "range", "select"]),
+  values: z.array(FacetValueSchema),
+  range: z.tuple([z.number(), z.number()]).optional(),
+});
+
+export const SearchRequestSchema = z.object({
+  query: z.string().min(1),
+  mode: SearchModeSchema.optional(),
+  category: z.string().optional(),
+  page: z.number().min(1).optional(),
+  appliedFacets: z.record(z.string(), z.any()).optional(),
+  region: z.string().optional(),
+  language: z.string().optional(),
+  safeSearch: z.enum(["on", "moderate", "off"]).optional(),
+  isPrivate: z.boolean().optional(),
+});
+
+export const SearchDiagnosticsSchema = z.object({
+  sourcesQueried: z.number(),
+  sourcesAvailable: z.number(),
+  queryVariants: z.number(),
+  resultsMerged: z.number(),
+  resultsReranked: z.number(),
+  cacheStatus: z.enum(["HIT", "MISS"]),
+  latencyMs: z.number(),
 });
 
 export const SearchResponseSchema = z.object({
   query: z.string(),
+  interpretedQuery: z.string().optional(),
+  typoCorrection: z.string().optional(),
+  mode: SearchModeSchema,
   results: z.array(SearchResultSchema),
-  facets: z.array(SearchFacetSchema),
-  totalResults: z.number().min(0),
-  timeMs: z.number().min(0),
+  facets: z.array(DynamicFacetSchema),
+  relatedQueries: z.array(z.string()),
+  totalResults: z.number(),
+  timeMs: z.number(),
+  cacheStatus: z.enum(["HIT", "MISS"]),
+  diagnostics: SearchDiagnosticsSchema,
+});
+
+export const SuggestRequestSchema = z.object({
+  query: z.string().min(1),
+  isPrivate: z.boolean().optional(),
+});
+
+export const SuggestionItemSchema = z.object({
+  id: z.string(),
+  text: z.string(),
+  url: z.string().optional(),
+  category: z.enum(["history", "bookmark", "completion", "contextual"]),
+  title: z.string().optional(),
+});
+
+export const SuggestResponseSchema = z.object({
+  query: z.string(),
+  suggestions: z.array(SuggestionItemSchema),
 });
 
 

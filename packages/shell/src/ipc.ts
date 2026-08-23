@@ -13,6 +13,7 @@ import {
   SearchRequestSchema,
   SetShieldEnabledRequestSchema,
   ShieldStatsSchema,
+  SuggestRequestSchema,
   TabIdRequestSchema,
   TabsUpdatedPayloadSchema,
   UnitRequestSchema,
@@ -29,7 +30,8 @@ export interface IpcDeps {
   readonly onMediaAction?: (action: string, param1: string, param2?: unknown) => void;
   readonly getMediaState?: () => unknown;
   readonly onMediaControl?: (action: string, value?: unknown) => void;
-  readonly onSearchQuery?: (query: string, category?: string, page?: number) => Promise<unknown>;
+  readonly onSearchQuery?: (req: import("@mine/contracts").SearchRequest) => Promise<unknown>;
+  readonly onSearchSuggest?: (query: string, isPrivate?: boolean) => unknown;
 }
 
 export function registerIpcHandlers(
@@ -238,14 +240,21 @@ export function registerIpcHandlers(
     return { ok: true, value: null } as const;
   });
 
-  // Search Handler
+  // Search Handlers
   ipcMain.handle(IPC_CHANNELS.search.query, async (_event, raw: unknown) => {
     const payload = parsePayload(SearchRequestSchema, raw);
     if (!payload.ok) return payload;
     if (deps.onSearchQuery) {
-      const res = await deps.onSearchQuery(payload.value.query, payload.value.category, payload.value.page);
+      const res = await deps.onSearchQuery(payload.value);
       return { ok: true, value: res } as const;
     }
-    return { ok: true, value: { query: payload.value.query, results: [], facets: [], totalResults: 0, timeMs: 0 } } as const;
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.search.suggest, async (_event, raw: unknown) => {
+    const payload = parsePayload(SuggestRequestSchema, raw);
+    if (!payload.ok) return payload;
+    const items = deps.onSearchSuggest?.(payload.value.query, payload.value.isPrivate) ?? [];
+    return { ok: true, value: { query: payload.value.query, suggestions: items } } as const;
   });
 }

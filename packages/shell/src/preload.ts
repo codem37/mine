@@ -143,6 +143,8 @@ const api = {
   },
   search: (payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>> =>
     ipcRenderer.invoke(IPC_CHANNELS.search.query, payload),
+  getSuggestions: (payload: import("@mine/contracts").SuggestRequest): Promise<Result<import("@mine/contracts").SuggestResponse>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.search.suggest, payload),
 };
 
 export type MineBridge = typeof api;

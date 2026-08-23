@@ -42,6 +42,9 @@ export const IPC_CHANNELS = {
   },
   search: {
     query: "mine:search:query",
+    suggest: "mine:search:suggest",
+    history: "mine:search:history",
+    getDiagnostics: "mine:search:get-diagnostics",
   },
 } as const;
 

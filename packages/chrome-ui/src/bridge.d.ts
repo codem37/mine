@@ -54,6 +54,7 @@ export interface MineBridge {
   onStreamDetected(cb: (payload: readonly import("@mine/contracts").MediaSource[]) => void): () => void;
   onPlayerStateChanged(cb: (payload: import("@mine/contracts").PlayerState) => void): () => void;
   search(payload: import("@mine/contracts").SearchRequest): Promise<Result<import("@mine/contracts").SearchResponse>>;
+  getSuggestions(payload: import("@mine/contracts").SuggestRequest): Promise<Result<import("@mine/contracts").SuggestResponse>>;
 }
 
 declare global {
