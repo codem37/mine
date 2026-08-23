@@ -6,6 +6,7 @@ export * from "./types/download.js";
 export * from "./types/media.js";
 export * from "./types/search.js";
 export * from "./types/safety.js";
+export * from "./types/protocol.js";
 export * from "./ipc/channels.js";
 export * from "./ipc/schemas.js";
 export * from "./layout/constants.js";

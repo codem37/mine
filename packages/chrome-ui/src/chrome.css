@@ -2349,6 +2349,119 @@
   font-weight: 700;
 }
 
+/* ---- Phase 8 Protocol UI ---- */
+
+.protocol-indicator-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 204, 255, 0.12);
+  border: var(--hud-stroke) solid var(--hud-cyan);
+  border-radius: 12px;
+  padding: 2px 8px;
+  color: var(--hud-cyan);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.protocol-indicator__badge {
+  background: var(--hud-cyan);
+  color: #0c1016;
+  padding: 1px 4px;
+  border-radius: 4px;
+  font-size: 10px;
+}
+
+.protocol-indicator__label {
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.protocol-info-overlay,
+.pin-storage-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  display: grid;
+  place-items: center;
+  z-index: 350;
+}
+
+.protocol-info-card,
+.pin-storage-card {
+  width: 360px;
+  padding: 20px;
+  background: rgba(18, 24, 34, 0.96);
+  border: var(--hud-stroke) solid var(--hud-glass-line);
+  border-radius: 20px;
+  color: var(--hud-text);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.6);
+}
+
+.protocol-info__header,
+.pin-storage__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--hud-cyan);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.protocol-info__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.protocol-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+}
+
+.protocol-info__val--mono {
+  font-family: monospace;
+}
+
+.protocol-info__val--safe {
+  color: var(--hud-green);
+  font-weight: 600;
+}
+
+.protocol-info__footer,
+.pin-storage__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.pin-storage__grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pin-storage-stat {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  font-size: 12px;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .titlebar,
   .tab-capsule,

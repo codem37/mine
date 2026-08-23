@@ -10,6 +10,7 @@ import {
   MediaItemDownloadRequestSchema,
   NavigateRequestSchema,
   NewTabRequestSchema,
+  PinRequestSchema,
   PlayNativeRequestSchema,
   SearchRequestSchema,
   SetShieldEnabledRequestSchema,
@@ -37,6 +38,12 @@ export interface IpcDeps {
   readonly getProtectionCenterStats?: () => unknown;
   readonly addSafetyException?: (domain: string, durationMinutes?: number) => void;
   readonly getSecurityEvents?: () => unknown;
+  readonly resolveProtocolUrl?: (url: string) => Promise<unknown>;
+  readonly getProtocolInfo?: (url: string) => Promise<unknown>;
+  readonly pinIpfsCid?: (cid: string) => void;
+  readonly unpinIpfsCid?: (cid: string) => void;
+  readonly clearIpfsCache?: () => void;
+  readonly getIpfsStorageStats?: () => unknown;
 }
 
 export function registerIpcHandlers(
@@ -287,5 +294,47 @@ export function registerIpcHandlers(
     const payload = parsePayload(UnitRequestSchema, raw);
     if (!payload.ok) return payload;
     return { ok: true, value: deps.getSecurityEvents?.() ?? [] } as const;
+  });
+
+  // Protocol Handlers
+  ipcMain.handle(IPC_CHANNELS.protocol.resolve, async (_event, raw: unknown) => {
+    const payload = parsePayload(NavigateRequestSchema, raw);
+    if (!payload.ok) return payload;
+    const res = await deps.resolveProtocolUrl?.(payload.value.url);
+    return { ok: true, value: res ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.protocol.getInfo, async (_event, raw: unknown) => {
+    const payload = parsePayload(NavigateRequestSchema, raw);
+    if (!payload.ok) return payload;
+    const res = await deps.getProtocolInfo?.(payload.value.url);
+    return { ok: true, value: res ?? null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.protocol.pin, async (_event, raw: unknown) => {
+    const payload = parsePayload(PinRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.pinIpfsCid?.(payload.value.cid);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.protocol.unpin, async (_event, raw: unknown) => {
+    const payload = parsePayload(PinRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.unpinIpfsCid?.(payload.value.cid);
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.protocol.clearCache, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    deps.clearIpfsCache?.();
+    return { ok: true, value: null } as const;
+  });
+
+  ipcMain.handle(IPC_CHANNELS.protocol.getStorage, async (_event, raw: unknown) => {
+    const payload = parsePayload(UnitRequestSchema, raw);
+    if (!payload.ok) return payload;
+    return { ok: true, value: deps.getIpfsStorageStats?.() ?? null } as const;
   });
 }

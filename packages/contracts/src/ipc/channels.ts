@@ -54,6 +54,14 @@ export const IPC_CHANNELS = {
     getEvents: "mine:safety:get-events",
     clearEvents: "mine:safety:clear-events",
   },
+  protocol: {
+    resolve: "mine:protocol:resolve",
+    getInfo: "mine:protocol:get-info",
+    pin: "mine:ipfs:pin",
+    unpin: "mine:ipfs:unpin",
+    clearCache: "mine:ipfs:clear-cache",
+    getStorage: "mine:ipfs:get-storage",
+  },
 } as const;
 
 export const IPC_EVENTS = {

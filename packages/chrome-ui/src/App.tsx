@@ -17,7 +17,10 @@ import { ProtectionCenter } from "./components/ProtectionCenter.js";
 import { SecurityEventsModal } from "./components/SecurityEventsModal.js";
 import { SecurityInterstitial } from "./components/SecurityInterstitial.js";
 import { LookalikeWarningToast } from "./components/LookalikeWarningToast.js";
+import { ProtocolInfoModal } from "./components/ProtocolInfoModal.js";
+import { PinStorageManagerModal } from "./components/PinStorageManagerModal.js";
 import { useLiveStats } from "./use-live-stats.js";
+import type { ProtocolInfoPayload } from "@mine/contracts";
 
 export function App(): JSX.Element {
   const { tabs: liveTabs, shield } = useLiveStats();
@@ -29,6 +32,9 @@ export function App(): JSX.Element {
   const [siteInfoOpen, setSiteInfoOpen] = useState(false);
   const [protectionCenterOpen, setProtectionCenterOpen] = useState(false);
   const [eventsModalOpen, setEventsModalOpen] = useState(false);
+  const [protocolModalOpen, setProtocolModalOpen] = useState(false);
+  const [storageModalOpen, setStorageModalOpen] = useState(false);
+  const [protocolInfo, setProtocolInfo] = useState<ProtocolInfoPayload | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [fullFetcherOpen, setFullFetcherOpen] = useState(false);
   const [bubbleOpen, setBubbleOpen] = useState(false);
@@ -171,6 +177,16 @@ export function App(): JSX.Element {
           activeUrl={active?.url ?? ""}
           shield={shield}
           onToggleSiteInfo={() => setProtectionCenterOpen(!protectionCenterOpen)}
+          onOpenProtocolInfo={() => {
+            if (active?.url && window.mine.getProtocolInfo) {
+              void window.mine.getProtocolInfo({ tabId: active.id, url: active.url }).then((res) => {
+                if (res.ok && res.value) {
+                  setProtocolInfo(res.value);
+                  setProtocolModalOpen(true);
+                }
+              });
+            }
+          }}
         />
 
         <MediaIndicator
@@ -240,6 +256,21 @@ export function App(): JSX.Element {
 
       {eventsModalOpen ? (
         <SecurityEventsModal onClose={() => setEventsModalOpen(false)} />
+      ) : null}
+
+      {protocolModalOpen && protocolInfo ? (
+        <ProtocolInfoModal
+          payload={protocolInfo}
+          onClose={() => setProtocolModalOpen(false)}
+          onOpenStorage={() => {
+            setProtocolModalOpen(false);
+            setStorageModalOpen(true);
+          }}
+        />
+      ) : null}
+
+      {storageModalOpen ? (
+        <PinStorageManagerModal onClose={() => setStorageModalOpen(false)} />
       ) : null}
 
       {menuOpen ? (

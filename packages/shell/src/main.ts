@@ -9,6 +9,7 @@ import { DownloadEngine } from "@mine/fetcher";
 import { MediaEngine } from "@mine/media";
 import { SearchEngine } from "@mine/search";
 import { SafetyEngine } from "@mine/safety";
+import { ProtocolManager } from "@mine/protocol";
 import { TabManager } from "./tab-manager.js";
 import type { HistoryEntry } from "./tab-manager.js";
 import {
@@ -136,6 +137,7 @@ function bootstrap(): void {
 
   const searchEngine = new SearchEngine();
   const safetyEngine = new SafetyEngine();
+  const protocolManager = new ProtocolManager();
 
   defaultSession().webRequest.onBeforeRequest({ urls: ["<all_urls>"] }, (details, callback) => {
     mediaEngine.inspectRequest({ url: details.url });
@@ -196,6 +198,12 @@ function bootstrap(): void {
     getProtectionCenterStats: () => safetyEngine.getProtectionCenterStats(18, 11),
     addSafetyException: (domain: string, durationMinutes?: number) => safetyEngine.addException(domain, durationMinutes),
     getSecurityEvents: () => safetyEngine.getEvents(),
+    resolveProtocolUrl: (url: string) => protocolManager.resolveUrl(url),
+    getProtocolInfo: (url: string) => protocolManager.getProtocolInfo(url),
+    pinIpfsCid: (cid: string) => protocolManager.helia.pin(cid),
+    unpinIpfsCid: (cid: string) => protocolManager.helia.unpin(cid),
+    clearIpfsCache: () => protocolManager.storage.clearCache(),
+    getIpfsStorageStats: () => protocolManager.storage.getStorageStats(),
   });
 
   win.on("maximize", emitWindowState);

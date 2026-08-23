@@ -3,11 +3,14 @@ import type { ShieldStats, TabId } from "@mine/contracts";
 import type { JSX } from "react";
 import { AddressBarSuggestions } from "./AddressBarSuggestions.js";
 
+import { ProtocolIndicator } from "./ProtocolIndicator.js";
+
 interface Props {
   readonly activeTabId: TabId | null;
   readonly activeUrl: string;
   readonly shield: ShieldStats | null;
   readonly onToggleSiteInfo?: () => void;
+  readonly onOpenProtocolInfo?: () => void;
 }
 
 function ShieldGlyph(): JSX.Element {
@@ -30,11 +33,15 @@ function ShieldGlyph(): JSX.Element {
   );
 }
 
-export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }: Props): JSX.Element {
+export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo, onOpenProtocolInfo }: Props): JSX.Element {
   const [value, setValue] = useState(activeUrl);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const focused = useRef(false);
   const shieldOn = shield?.enabled !== false;
+
+  const isEns = activeUrl.endsWith(".eth") || activeUrl.includes(".eth/");
+  const isIpfs = activeUrl.startsWith("ipfs://") || activeUrl.includes("ipfs/");
+  const protocol = isEns ? "ens" : isIpfs ? "ipfs" : "https";
 
   let isSecure = true;
   try {
@@ -73,15 +80,23 @@ export function AddressBar({ activeTabId, activeUrl, shield, onToggleSiteInfo }:
         handleNavigate(value);
       }}
     >
-      <button
-        type="button"
-        className="addressbar__security"
-        title="Site Information"
-        onClick={onToggleSiteInfo}
-        aria-label="Site security status"
-      >
-        {isSecure ? "🔒" : "⚠️"}
-      </button>
+      {protocol !== "https" ? (
+        <ProtocolIndicator
+          protocol={protocol}
+          label={activeUrl}
+          onClick={() => onOpenProtocolInfo?.()}
+        />
+      ) : (
+        <button
+          type="button"
+          className="addressbar__security"
+          title="Site Information"
+          onClick={onToggleSiteInfo}
+          aria-label="Site security status"
+        >
+          {isSecure ? "🔒" : "⚠️"}
+        </button>
+      )}
 
       <input
         value={value}

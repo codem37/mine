@@ -153,6 +153,18 @@ const api = {
     ipcRenderer.invoke(IPC_CHANNELS.safety.addException, payload),
   getSecurityEvents: (): Promise<Result<readonly import("@mine/contracts").SecurityEvent[]>> =>
     ipcRenderer.invoke(IPC_CHANNELS.safety.getEvents, {}),
+  resolveProtocolUrl: (payload: import("@mine/contracts").NavigateRequest): Promise<Result<unknown>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.resolve, payload),
+  getProtocolInfo: (payload: import("@mine/contracts").NavigateRequest): Promise<Result<import("@mine/contracts").ProtocolInfoPayload>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.getInfo, payload),
+  pinIpfsCid: (payload: import("@mine/contracts").PinRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.pin, payload),
+  unpinIpfsCid: (payload: import("@mine/contracts").PinRequest): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.unpin, payload),
+  clearIpfsCache: (): Promise<InvokeResult> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.clearCache, {}),
+  getIpfsStorageStats: (): Promise<Result<import("@mine/contracts").IPFSStorageStats>> =>
+    ipcRenderer.invoke(IPC_CHANNELS.protocol.getStorage, {}),
 };
 
 export type MineBridge = typeof api;

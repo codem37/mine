@@ -59,6 +59,12 @@ export interface MineBridge {
   getProtectionStats(): Promise<Result<import("@mine/contracts").ProtectionCenterStats>>;
   addSafetyException(payload: import("@mine/contracts").AddExceptionRequest): Promise<InvokeResult>;
   getSecurityEvents(): Promise<Result<readonly import("@mine/contracts").SecurityEvent[]>>;
+  resolveProtocolUrl(payload: import("@mine/contracts").NavigateRequest): Promise<Result<unknown>>;
+  getProtocolInfo(payload: import("@mine/contracts").NavigateRequest): Promise<Result<import("@mine/contracts").ProtocolInfoPayload>>;
+  pinIpfsCid(payload: import("@mine/contracts").PinRequest): Promise<InvokeResult>;
+  unpinIpfsCid(payload: import("@mine/contracts").PinRequest): Promise<InvokeResult>;
+  clearIpfsCache(): Promise<InvokeResult>;
+  getIpfsStorageStats(): Promise<Result<import("@mine/contracts").IPFSStorageStats>>;
 }
 
 declare global {

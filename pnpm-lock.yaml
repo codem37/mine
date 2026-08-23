@@ -81,6 +81,19 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/node@22.20.1)
 
+  packages/protocol:
+    dependencies:
+      '@mine/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+    devDependencies:
+      typescript:
+        specifier: ^5.7.2
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/node@22.20.1)
+
   packages/safety:
     dependencies:
       '@mine/contracts':
@@ -118,6 +131,9 @@ importers:
       '@mine/media':
         specifier: workspace:*
         version: link:../media
+      '@mine/protocol':
+        specifier: workspace:*
+        version: link:../protocol
       '@mine/safety':
         specifier: workspace:*
         version: link:../safety

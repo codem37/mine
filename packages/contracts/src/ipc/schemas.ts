@@ -429,5 +429,36 @@ export const AddExceptionRequestSchema = z.object({
   durationMinutes: z.number().optional(),
 });
 
+export const ProtocolTypeSchema = z.enum(["ipfs", "ens", "https"]);
+
+export const ENSResolutionSchema = z.object({
+  name: z.string(),
+  address: z.string().optional(),
+  contentTarget: z.string().optional(),
+  avatar: z.string().optional(),
+  records: z.record(z.string(), z.string()).optional(),
+  status: z.enum(["resolving", "resolved", "unresolved", "invalid", "timeout"]),
+});
+
+export const IPFSResourceSchema = z.object({
+  cid: z.string(),
+  status: z.enum(["resolving", "fetching", "cached", "pinned", "unavailable", "invalid"]),
+  cached: z.boolean(),
+  pinned: z.boolean(),
+  sizeBytes: z.number().optional(),
+  gatewayUsed: z.string().optional(),
+});
+
+export const IPFSStorageStatsSchema = z.object({
+  pinnedCount: z.number(),
+  cacheSizeBytes: z.number(),
+  pinnedSizeBytes: z.number(),
+  availableBytes: z.number(),
+});
+
+export const PinRequestSchema = z.object({
+  cid: z.string().min(1),
+});
+
 
 
