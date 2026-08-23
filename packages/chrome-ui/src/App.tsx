@@ -3,6 +3,7 @@ import type { Telemetry, WindowState } from "@mine/contracts";
 import type { JSX } from "react";
 import { TabStrip } from "./components/TabStrip.js";
 import { AddressBar } from "./components/AddressBar.js";
+import { NavControls } from "./components/NavControls.js";
 import { WindowControls } from "./components/WindowControls.js";
 import { TelemetryRail } from "./components/TelemetryRail.js";
 import { useLiveStats } from "./use-live-stats.js";
@@ -32,6 +33,7 @@ export function App(): JSX.Element {
           tabs={tabsPayload.tabs}
           activeTabId={tabsPayload.activeTabId}
         />
+        <NavControls active={active} />
         <AddressBar
           activeTabId={tabsPayload.activeTabId}
           activeUrl={active?.url ?? ""}

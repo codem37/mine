@@ -79,6 +79,11 @@
   padding: 2px 8px;
 }
 
+.navcontrols {
+  display: flex;
+  gap: 2px;
+}
+
 .addressbar {
   flex: 1;
   min-width: 160px;
