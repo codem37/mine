@@ -19,7 +19,7 @@ import {
   chromeAssetRoot,
   declarePrivilegedScheme,
 } from "./protocol.js";
-import { defaultSession, registerSessionHook } from "./sessions.js";
+import { applySessionHooks, defaultSession, registerSessionHook } from "./sessions.js";
 import { registerIpcHandlers } from "./ipc.js";
 import { createShieldBridge } from "./shield-bridge.js";
 import { TelemetrySampler } from "./telemetry.js";
@@ -96,6 +96,7 @@ function bootstrap(): void {
   const bridge = createShieldBridge();
   bridgeRef = bridge;
   registerSessionHook(bridge.hookSession);
+  applySessionHooks(defaultSession());
   defaultSession().setPermissionRequestHandler((_wc, _permission, callback) => {
     callback(false);
   });

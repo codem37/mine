@@ -109,7 +109,7 @@ export class ShieldEngine {
     resourceType: string,
   ): RequestVerdict {
     // Disabled or allowlisted site short-circuits evaluation
-    if (!this.#enabled || this.isSiteAllowed(sourceUrl) || this.isSiteAllowed(url)) {
+    if (!this.#enabled || this.isSiteAllowed(sourceUrl)) {
       return { blocked: false, matchedFilter: null };
     }
     if (this.#state !== "ready" || this.#native === null) {

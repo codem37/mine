@@ -290,7 +290,9 @@ export class TabManager {
     const wc = tab.view.webContents;
     const injectMediaObserver = () => {
       try {
-        void wc.executeJavaScript(DOM_MEDIA_OBSERVER_SCRIPT);
+        if (!wc.isDestroyed()) {
+          void wc.executeJavaScript(DOM_MEDIA_OBSERVER_SCRIPT).catch(() => {});
+        }
       } catch {
         // ignore
       }

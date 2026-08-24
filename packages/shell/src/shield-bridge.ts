@@ -3,6 +3,8 @@ import {
   ShieldEngine,
   fetchAllLists,
   loadShieldNative,
+  isEssentialYouTubeMediaRequest,
+  redactRequestDiagnostic,
   readCache,
   resolveCacheDir,
   writeCache,
@@ -56,29 +58,13 @@ function isRequired(name: string): boolean {
   return source !== undefined && !source.optional;
 }
 
-export function isYouTubeMediaStream(urlString: string, sourceUrl: string, resourceType: string): boolean {
-  try {
-    const parsed = new URL(urlString);
-    const host = parsed.hostname.toLowerCase();
-    const isGooglevideoHost = host === "googlevideo.com" || host.endsWith(".googlevideo.com");
-    const isVideoplaybackPath = parsed.pathname === "/videoplayback";
-    const resType = resourceType.toLowerCase();
-    const isMediaResource = resType === "media" || resType === "xmlhttprequest" || resType === "other";
-
-    if (!isGooglevideoHost || !isVideoplaybackPath || !isMediaResource) {
-      return false;
-    }
-
-    const source = sourceUrl.toLowerCase();
-    return (
-      source.includes("youtube.com") ||
-      source.includes("youtube-nocookie.com") ||
-      source.includes("googlevideo.com") ||
-      source === ""
-    );
-  } catch {
-    return false;
-  }
+/** Exported for regression coverage; production code uses the shared policy. */
+export function isYouTubeMediaStream(
+  url: string,
+  sourceUrl: string,
+  resourceType: string,
+): boolean {
+  return isEssentialYouTubeMediaRequest({ url, sourceUrl, resourceType });
 }
 
 export function createShieldBridge(): ShieldBridge {
@@ -102,22 +88,15 @@ export function createShieldBridge(): ShieldBridge {
       (details, callback) => {
         requestRate.record();
         try {
-          const initiator = (details as unknown as { initiator?: string }).initiator || "";
-          let sourceUrl = details.referrer || initiator;
-          if (!sourceUrl) {
-            try {
-              sourceUrl = details.frame?.url ?? "";
-            } catch {
-              sourceUrl = "";
-            }
+          let sourceUrl = "";
+          try {
+            sourceUrl = details.frame?.url ?? "";
+          } catch {
+            sourceUrl = "";
           }
+          if (!sourceUrl) sourceUrl = details.referrer || "";
 
           const resType = String(details.resourceType);
-
-          if (isYouTubeMediaStream(details.url, sourceUrl, resType)) {
-            callback({ cancel: false });
-            return;
-          }
 
           const verdict = engine.checkRequest(
             details.url,
@@ -128,6 +107,12 @@ export function createShieldBridge(): ShieldBridge {
             callback({ cancel: false });
             return;
           }
+          if (isEssentialYouTubeMediaRequest({ url: details.url, sourceUrl, resourceType: resType })) {
+            callback({ cancel: false });
+            return;
+          }
+          const diagnostic = redactRequestDiagnostic({ url: details.url, sourceUrl, resourceType: resType });
+          if (diagnostic !== null) console.info("[Shield Blocked]", diagnostic);
           counts.increment();
           emit({
             webContentsId: details.webContentsId ?? null,

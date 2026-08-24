@@ -22,6 +22,10 @@ function runHooks(target: Electron.Session): void {
   }
 }
 
+export function applySessionHooks(target: Electron.Session): void {
+  runHooks(target);
+}
+
 export function defaultSession(): Electron.Session {
   return session.defaultSession;
 }

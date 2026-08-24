@@ -7,12 +7,12 @@ describe("isYouTubeMediaStream matcher regression tests", () => {
     const sourceUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ";
 
     expect(isYouTubeMediaStream(mediaUrl, sourceUrl, "media")).toBe(true);
-    expect(isYouTubeMediaStream(mediaUrl, sourceUrl, "xmlhttprequest")).toBe(true);
+    expect(isYouTubeMediaStream(mediaUrl, sourceUrl, "xmlhttprequest")).toBe(false);
   });
 
-  it("allows googlevideo videoplayback when initiator is empty or embed", () => {
+  it("requires a verified YouTube initiator", () => {
     const mediaUrl = "https://rr5---sn-4g5ednsl.googlevideo.com/videoplayback?expire=1787521200";
-    expect(isYouTubeMediaStream(mediaUrl, "", "media")).toBe(true);
+    expect(isYouTubeMediaStream(mediaUrl, "", "media")).toBe(false);
     expect(isYouTubeMediaStream(mediaUrl, "https://www.youtube-nocookie.com/embed/abc", "media")).toBe(true);
   });
 

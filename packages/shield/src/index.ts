@@ -6,3 +6,4 @@ export * from "./native-loader.js";
 export * from "./ghostery-adapter.js";
 export * from "./site-settings.js";
 export * from "./list-scheduler.js";
+export * from "./request-policy.js";
